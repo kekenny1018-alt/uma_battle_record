@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>賽馬娘冠軍集會紀錄器 專業圖鑑版 v27</title>
+    <title>賽馬娘冠軍集會紀錄器 專業圖鑑版 v28</title>
+    <!-- 引入 html2canvas 截圖套件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a24; color: #f5f5f5; margin: 0; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
@@ -31,7 +32,6 @@
         .preview-avatar-btn { width: 85px; height: 85px; border-radius: 8px; object-fit: cover; background-color: #444; cursor: pointer; border: 2px solid #555; transition: 0.2s; flex-shrink: 0; }
         .preview-avatar-btn:hover { border-color: #4CAF50; transform: scale(1.05); }
         
-        /* 放大輸入框長度，佔據更多空間 */
         .roster-input-group { display: flex; flex: 1; gap: 10px; align-items: center; flex-wrap: nowrap; width: 100%; }
         .roster-input-group input[type="text"] { flex: 1; min-width: 300px; max-width: 800px; font-size: 18px; padding: 10px; }
         .roster-input-group label { white-space: nowrap; display: flex; align-items: center; gap: 5px; margin: 0; cursor: pointer; flex-shrink: 0; font-size: 16px; }
@@ -85,7 +85,7 @@
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: #252530; padding: 25px; border-radius: 12px; width: 95%; max-width: 1050px; max-height: 85vh; overflow-y: auto; border: 1px solid #4CAF50; position: relative; }
         
-        .close-modal { position: absolute; right: 20px; top: 15px; background: none; color: #aaa; font-size: 32px; cursor: pointer; padding: 0; }
+        .close-modal { position: absolute; right: 20px; top: 15px; background: none; color: #aaa; font-size: 32px; cursor: pointer; padding: 0; z-index: 10; }
         .close-modal:hover { color: white; background: none; }
 
         .avatar-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; max-height: 55vh; overflow-y: auto; padding-right: 5px; }
@@ -172,6 +172,7 @@
     </div>
 
     <div class="main-container">
+        <!-- 左半部面板 -->
         <div class="panel left-panel">
             <div id="stage_display" class="stage-title">載入中...</div>
             <label>出賽陣容與名次點選</label>
@@ -217,15 +218,18 @@
             </div>
         </div>
 
+        <!-- 右半部面板 (整合勝率統計) -->
         <div class="panel right-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px;">
                 <h2 style="margin: 0; border: none; padding: 0;">🎯 當前輪次戰況</h2>
             </div>
             
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <!-- 左側戰況表 -->
                 <div style="flex: 2; min-width: 350px;">
                     <div id="current_round_container"></div>
                 </div>
+                <!-- 右側勝率統計區 -->
                 <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 15px;">
                     <div class="rate-box">
                         <div class="rate-label" id="today_label">🔥 當日勝率 (預賽第一天)</div>
@@ -245,6 +249,7 @@
         </div>
     </div>
 
+    <!-- 彈出視窗：頭像選擇 -->
     <div id="avatar_modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 850px;">
             <button class="close-modal" onclick="closeModal('avatar_modal')">&times;</button>
@@ -254,6 +259,7 @@
         </div>
     </div>
 
+    <!-- 彈出視窗：進階戰績 -->
     <div id="stats_modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 900px;">
             <button class="close-modal" onclick="closeModal('stats_modal')">&times;</button>
@@ -265,10 +271,12 @@
         </div>
     </div>
 
+    <!-- 彈出視窗：歷史明細 -->
     <div id="history_modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('history_modal')">&times;</button>
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #4CAF50; margin-bottom: 15px; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+            <!-- 加上 padding-right: 40px 防止按鈕與叉叉重疊 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #4CAF50; margin-bottom: 15px; padding-bottom: 10px; flex-wrap: wrap; gap: 10px; padding-right: 40px;">
                 <h2 style="border:none; margin: 0;">📜 歷史戰績</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button onclick="exportCurrentHistory()" style="background-color: #2196F3; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">📸 產生【本頁戰績】圖片</button>
@@ -281,6 +289,7 @@
         </div>
     </div>
 
+    <!-- 彈出視窗：截圖結果預覽與下載 -->
     <div id="export_modal" class="modal-overlay" style="z-index: 200;">
         <div class="modal-content" style="max-width: 90%; text-align: center;">
             <button class="close-modal" onclick="closeModal('export_modal')">&times;</button>
@@ -298,12 +307,14 @@
         </div>
     </div>
 
+    <!-- 載入中遮罩 -->
     <div id="export_loading" class="modal-overlay" style="z-index: 300; flex-direction: column; color: white; font-size: 24px; font-weight: bold;">
         ⏳ 正在為您繪製高畫質圖片，請稍候...
     </div>
 
-    <div id="daily_export_area" style="display:none;"></div>
-    <div id="summary_export_area" style="display:none;"></div>
+    <!-- 隱藏的截圖專用容器 (完全避開顯示干擾) -->
+    <div id="daily_export_area" style="position: absolute; top: -9999px; left: 0; width: 0; height: 0; overflow: hidden; opacity: 0; z-index: -100;"></div>
+    <div id="summary_export_area" style="position: absolute; top: -9999px; left: 0; width: 0; height: 0; overflow: hidden; opacity: 0; z-index: -100;"></div>
 
     <script>
         // ==========================================
@@ -353,7 +364,6 @@
             "櫻花千代王(禮服).jpg", "櫻花千代王.jpg", "櫻花桂冠(新年).jpg", "櫻花桂冠.jpg", "櫻花驀進王(禮服).jpg",
             "櫻花驀進王(體育節).jpg", "櫻花驀進王.jpg", "鶴丸強志.jpg"
         ];
-        // ==========================================
 
         let roster = JSON.parse(localStorage.getItem('uma_roster')) || [];
         let records = JSON.parse(localStorage.getItem('uma_records')) || [];
@@ -716,11 +726,15 @@
             for (let horseName of sortedHorseNames) {
                 const hInfo = roster.find(r => r.name === horseName) || { image: "unknown.jpg" };
                 const imgSrc = hInfo.image && hInfo.image !== "unknown.jpg" ? `img/${hInfo.image}` : getHorseImg(horseName);
+                
+                // 決賽如果贏了顯示"第一名"，否則維持原本格式
+                let winText = isFinals ? "第一名" : `${horseWins[horseName]} 勝`;
+                
                 horseStatsArr.push(`
                     <div class="daily-stat-card">
                         <img src="${imgSrc}" class="daily-stat-avatar" onerror="this.src='img/unknown.jpg'; this.style.backgroundColor='#222'">
                         <div class="daily-stat-name">${formatName(horseName)}</div>
-                        <div class="daily-stat-wins">${horseWins[horseName]} 勝</div>
+                        <div class="daily-stat-wins">${winText}</div>
                     </div>
                 `);
             }
@@ -735,13 +749,20 @@
 
         function buildGridHTML(chunkArray, titleLabel, isFinals = false) {
             if (chunkArray.length === 0) return "";
-            let html = `<div style="margin-bottom: 25px;"><h3 style="color:#fff; border-bottom:1px solid #555; padding-bottom:5px; font-size:18px;">${titleLabel}</h3>`;
+            
+            let wrapperStyle = isFinals ? "margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; width: 100%;" : "margin-bottom: 25px;";
+            let html = `<div style="${wrapperStyle}">`;
+            
+            let titleStyle = isFinals ? "color:#FFD700; border-bottom:none; padding-bottom:5px; font-size:20px; text-align:center; width:100%; margin-bottom: 5px;" : "color:#fff; border-bottom:1px solid #555; padding-bottom:5px; font-size:18px;";
+            let finalIcon = isFinals ? "🏆 " : "";
+            html += `<h3 style="${titleStyle}">${finalIcon}${titleLabel}</h3>`;
             
             let cols = isFinals ? 1 : 5;
             let ths = "";
             for(let j=1; j<=cols; j++) ths += `<th>M${j}</th>`;
             
-            html += `<table class="grid-table"><tr><th style="width:170px;">上場陣容</th>${ths}</tr>`;
+            let tableWidth = isFinals ? "width: auto; min-width: 350px;" : "width: 100%;";
+            html += `<table class="grid-table" style="${tableWidth}"><tr><th style="width:170px;">上場陣容</th>${ths}</tr>`;
             
             const firstMatchLineup = chunkArray[0].lineup;
             for (let i = 0; i < 3; i++) {
@@ -799,7 +820,12 @@
             const display_start = Math.floor((records.length - 1) / 5) * 5;
             const chunk = records.slice(display_start, display_start + 5);
             const isFinals = chunk[0].match_id === 81;
-            container.innerHTML = `<div class="tables-grid" style="display:block;">` + buildGridHTML(chunk, getStageInfo(chunk[0].match_id).shortTitle, isFinals) + `</div>`;
+            
+            if (isFinals) {
+                container.innerHTML = `<div style="display:flex; justify-content:center;">` + buildGridHTML(chunk, getStageInfo(chunk[0].match_id).shortTitle, isFinals) + `</div>`;
+            } else {
+                container.innerHTML = `<div class="tables-grid" style="display:block;">` + buildGridHTML(chunk, getStageInfo(chunk[0].match_id).shortTitle, isFinals) + `</div>`;
+            }
         }
 
         function openHistoryModal() { 
@@ -834,12 +860,19 @@
             const finalGrp = (prelimMax >= 3 && semiMax >= 3) ? "A" : "B";
             
             let html = generateDayStatsHTML(dayRecords, isFinals, finalGrp);
-            html += `<div class="tables-grid">`;
-            for (let i = 0; i < dayRecords.length; i += 5) {
-                const chunk = dayRecords.slice(i, i + 5);
-                html += buildGridHTML(chunk, getStageInfo(chunk[0].match_id).shortTitle, isFinals);
+            
+            if (isFinals) {
+                html += `<div style="display:flex; justify-content:center; width:100%;">`;
+                html += buildGridHTML(dayRecords, getStageInfo(81).title, true);
+                html += `</div>`;
+            } else {
+                html += `<div class="tables-grid">`;
+                for (let i = 0; i < dayRecords.length; i += 5) {
+                    const chunk = dayRecords.slice(i, i + 5);
+                    html += buildGridHTML(chunk, getStageInfo(chunk[0].match_id).shortTitle, false);
+                }
+                html += `</div>`;
             }
-            html += `</div>`;
             container.innerHTML = html;
         }
 
@@ -902,9 +935,8 @@
 
             document.getElementById('export_loading').style.display = 'flex';
 
-            // 儲存原始狀態
             const oldScroll = window.scrollY;
-            window.scrollTo(0, 0); // 確保 html2canvas 從視窗頂部開始抓取
+            window.scrollTo(0, 0); 
 
             const originalDisplay = element.style.display;
             const originalPosition = element.style.position;
@@ -912,14 +944,12 @@
             const originalLeft = element.style.left;
             const originalZIndex = element.style.zIndex;
 
-            // 將隱藏元素暫時搬到畫面左上角，但在最底層 (不會蓋住載入畫面)
             element.style.display = 'block';
             element.style.position = 'absolute';
             element.style.top = '0';
             element.style.left = '0';
             element.style.zIndex = '-100'; 
 
-            // 給予 DOM 與圖片足夠的時間渲染 (重要)
             setTimeout(() => {
                 html2canvas(element, {
                     backgroundColor: "#1a1a24",
@@ -927,13 +957,12 @@
                     useCORS: true,
                     scrollY: 0
                 }).then(canvas => {
-                    // 恢復原狀
                     element.style.display = originalDisplay;
                     element.style.position = originalPosition;
                     element.style.top = originalTop;
                     element.style.left = originalLeft;
                     element.style.zIndex = originalZIndex;
-                    window.scrollTo(0, oldScroll); // 恢復原本的捲軸位置
+                    window.scrollTo(0, oldScroll);
 
                     document.getElementById('export_loading').style.display = 'none';
 
@@ -947,7 +976,6 @@
 
                     document.getElementById('export_modal').style.display = 'flex';
                 }).catch(err => {
-                    // 發生錯誤也要記得恢復原狀
                     element.style.display = originalDisplay;
                     element.style.position = originalPosition;
                     element.style.top = originalTop;
@@ -1029,7 +1057,7 @@
                 html += `<p style="text-align:center; color:#888; font-size:18px;">無紀錄或未晉級</p>`;
             } else {
                 html += generateDayStatsHTML(finalsRecord, true, finalGrp);
-                html += `<div class="tables-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">`;
+                html += `<div style="display:flex; justify-content:center; margin-top:20px;">`;
                 html += buildGridHTML(finalsRecord, getStageInfo(81).title, true);
                 html += `</div>`;
             }
