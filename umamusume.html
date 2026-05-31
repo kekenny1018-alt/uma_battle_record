@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>賽馬娘冠軍集會紀錄器 專業圖鑑版 v26</title>
-    <!-- 引入 html2canvas 截圖套件 -->
+    <title>賽馬娘冠軍集會紀錄器 專業圖鑑版 v27</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a24; color: #f5f5f5; margin: 0; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
@@ -14,8 +13,8 @@
         .right-panel { flex: 1.8; min-width: 500px; display: flex; flex-direction: column; }
         h2, h3 { color: #4CAF50; border-bottom: 1px solid #444; padding-bottom: 10px; margin-top: 0; }
         
-        /* 勝率面板樣式 */
-        .rate-box { flex: 1; background: #323240; border-left: 5px solid #FF9800; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .win-rate-panel { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+        .rate-box { flex: 1; min-width: 200px; background: #323240; border-left: 5px solid #FF9800; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         .rate-box.total { border-left-color: #4CAF50; }
         .rate-label { font-size: 15px; color: #aaa; margin-bottom: 5px; font-weight: bold; }
         .rate-value { font-size: 36px; font-weight: bold; color: #fff; }
@@ -32,11 +31,11 @@
         .preview-avatar-btn { width: 85px; height: 85px; border-radius: 8px; object-fit: cover; background-color: #444; cursor: pointer; border: 2px solid #555; transition: 0.2s; flex-shrink: 0; }
         .preview-avatar-btn:hover { border-color: #4CAF50; transform: scale(1.05); }
         
-        /* 縮短輸入框，讓版面更緊湊 */
-        .roster-input-group { display: flex; flex: 1; gap: 10px; align-items: center; flex-wrap: nowrap; min-width: 250px; }
-        .roster-input-group input[type="text"] { flex: 1; max-width: 150px; font-size: 16px; }
-        .roster-input-group label { white-space: nowrap; display: flex; align-items: center; gap: 5px; margin: 0; cursor: pointer; flex-shrink: 0; }
-        .roster-input-group button { white-space: nowrap; width: auto; flex-shrink: 0; }
+        /* 放大輸入框長度，佔據更多空間 */
+        .roster-input-group { display: flex; flex: 1; gap: 10px; align-items: center; flex-wrap: nowrap; width: 100%; }
+        .roster-input-group input[type="text"] { flex: 1; min-width: 300px; max-width: 800px; font-size: 18px; padding: 10px; }
+        .roster-input-group label { white-space: nowrap; display: flex; align-items: center; gap: 5px; margin: 0; cursor: pointer; flex-shrink: 0; font-size: 16px; }
+        .roster-input-group button { white-space: nowrap; width: auto; flex-shrink: 0; padding: 10px 20px; font-size: 16px; }
         
         .roster-tag { background: #4CAF50; padding: 5px 10px; border-radius: 15px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; margin: 0 5px 5px 0;}
         .roster-tag.debuff { background: #888; }
@@ -161,8 +160,7 @@
             <img id="preview_avatar" class="preview-avatar-btn" src="img/unknown.jpg" onclick="openAvatarModal()" title="點擊選擇頭像" onerror="this.src=''; this.style.backgroundColor='#555'">
             <input type="hidden" id="selected_filename" value="unknown.jpg">
             <div class="roster-input-group">
-                <!-- 加入 onkeypress 支援 Enter 送出 -->
-                <input type="text" id="new_horse_name" placeholder="點頭像或輸入暱稱" onkeypress="if(event.key === 'Enter') addToRoster()">
+                <input type="text" id="new_horse_name" placeholder="點擊左側頭像選擇，或輸入暱稱 (按Enter快速登錄)">
                 <label><input type="checkbox" id="new_horse_debuff"> 咒馬</label>
                 <button onclick="addToRoster()">登錄</button>
             </div>
@@ -174,7 +172,6 @@
     </div>
 
     <div class="main-container">
-        <!-- 左半部面板 -->
         <div class="panel left-panel">
             <div id="stage_display" class="stage-title">載入中...</div>
             <label>出賽陣容與名次點選</label>
@@ -220,18 +217,15 @@
             </div>
         </div>
 
-        <!-- 右半部面板 (整合勝率統計) -->
         <div class="panel right-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px;">
                 <h2 style="margin: 0; border: none; padding: 0;">🎯 當前輪次戰況</h2>
             </div>
             
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <!-- 左側戰況表 -->
                 <div style="flex: 2; min-width: 350px;">
                     <div id="current_round_container"></div>
                 </div>
-                <!-- 右側勝率統計區 -->
                 <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 15px;">
                     <div class="rate-box">
                         <div class="rate-label" id="today_label">🔥 當日勝率 (預賽第一天)</div>
@@ -251,7 +245,6 @@
         </div>
     </div>
 
-    <!-- 彈出視窗：頭像選擇 -->
     <div id="avatar_modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 850px;">
             <button class="close-modal" onclick="closeModal('avatar_modal')">&times;</button>
@@ -261,7 +254,6 @@
         </div>
     </div>
 
-    <!-- 彈出視窗：進階戰績 -->
     <div id="stats_modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 900px;">
             <button class="close-modal" onclick="closeModal('stats_modal')">&times;</button>
@@ -273,7 +265,6 @@
         </div>
     </div>
 
-    <!-- 彈出視窗：歷史明細 -->
     <div id="history_modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('history_modal')">&times;</button>
@@ -290,7 +281,6 @@
         </div>
     </div>
 
-    <!-- 彈出視窗：截圖結果預覽與下載 -->
     <div id="export_modal" class="modal-overlay" style="z-index: 200;">
         <div class="modal-content" style="max-width: 90%; text-align: center;">
             <button class="close-modal" onclick="closeModal('export_modal')">&times;</button>
@@ -308,15 +298,17 @@
         </div>
     </div>
 
-    <!-- 載入中遮罩 -->
     <div id="export_loading" class="modal-overlay" style="z-index: 300; flex-direction: column; color: white; font-size: 24px; font-weight: bold;">
         ⏳ 正在為您繪製高畫質圖片，請稍候...
     </div>
 
-    <!-- 隱藏的截圖專用容器 (完全避開顯示干擾) -->
-    <div id="export_workspace" style="position: absolute; top: -9999px; left: 0; width: 0; height: 0; overflow: hidden; opacity: 0; z-index: -100;"></div>
+    <div id="daily_export_area" style="display:none;"></div>
+    <div id="summary_export_area" style="display:none;"></div>
 
     <script>
+        // ==========================================
+        // ⚠️ 【完整 254 張圖片清單】 ⚠️
+        // ==========================================
         const AVAILABLE_IMAGES = [
             "unknown.jpg", "kiseki.jpg", "八重無敵(戰裝).png", "八重無敵.jpg", "丸善斯基(泳裝).jpg", "丸善斯基(新年).jpg",
             "丸善斯基.jpg", "千明代表(新年).jpg", "千明代表.jpg", "大和赤驥(聖誕節).jpg", "大和赤驥.jpg", "大鳴大放.png",
@@ -357,14 +349,22 @@
             "葛城榮主(新年).jpg", "葛城榮主.jpg", "夢之旅(聖誕節).jpg", "夢之旅.png", "榮進閃耀(夏日).jpg", "榮進閃耀(情人節).jpg",
             "榮進閃耀.jpg", "稻荷一(慶典).jpg", "稻荷一.jpg", "緞通烈焰.jpg", "踢踏城市(禮服).jpg", "踢踏城市.png",
             "魯道夫象徵(慶典).jpg", "魯道夫象徵.jpg", "醒目飛鷹(華麗演唱會).jpg", "醒目飛鷹(遊行).jpg", "醒目飛鷹.jpg",
-            "優秀素質(啦啦隊).jpg", "優秀素質(新年).png", "優秀素質.jpg", "叢林口袋(啦啦隊).jpg", "丛林口袋.jpg", "雙渦輪.jpg",
+            "優秀素質(啦啦隊).jpg", "優秀素質(新年).png", "優秀素質.jpg", "叢林口袋(啦啦隊).jpg", "叢林口袋.jpg", "雙渦輪.jpg",
             "櫻花千代王(禮服).jpg", "櫻花千代王.jpg", "櫻花桂冠(新年).jpg", "櫻花桂冠.jpg", "櫻花驀進王(禮服).jpg",
             "櫻花驀進王(體育節).jpg", "櫻花驀進王.jpg", "鶴丸強志.jpg"
         ];
+        // ==========================================
 
         let roster = JSON.parse(localStorage.getItem('uma_roster')) || [];
         let records = JSON.parse(localStorage.getItem('uma_records')) || [];
         let currentRanks = { a: null, b: null, c: null };
+
+        // 綁定輸入框 Enter 鍵功能
+        document.getElementById('new_horse_name').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                addToRoster();
+            }
+        });
 
         function getBaseName(name) { return name.split('(')[0]; }
         function formatName(name) { return name.replace(/\((.*?)\)/g, '<br>$1'); }
@@ -574,7 +574,7 @@
             } else {
                 const horse = roster.find(h => h.name === name);
                 
-                rowWrapper.style.display = "flex"; imgEl.style.display = "block"; nameEl.style.display = "block";
+                rowWrapper.style.display = "flex"; imgEl.style.display = "block"; nameEl.style.display = "flex";
                 const imgSrc = horse.image && horse.image !== "unknown.jpg" ? `img/${horse.image}` : 'img/unknown.jpg';
                 imgEl.src = imgSrc;
                 
@@ -893,35 +893,48 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
 
-        // --- 核心強固截圖引擎 ---
+        // --- 強大的非 cloneNode 截圖引擎 ---
         function generateImageFromElement(elementId, filename) {
-            const sourceElement = document.getElementById(elementId);
-            if (!sourceElement || sourceElement.innerHTML.trim() === "") return alert("沒有內容可以匯出！");
+            const element = document.getElementById(elementId);
+            if (!element || element.innerHTML.trim() === "") {
+                return alert("沒有內容可以匯出！");
+            }
 
             document.getElementById('export_loading').style.display = 'flex';
 
-            const wrapper = document.createElement('div');
-            wrapper.style.position = 'absolute';
-            wrapper.style.top = '0';
-            wrapper.style.left = '0';
-            wrapper.style.zIndex = '-100';
-            wrapper.style.width = elementId === 'summary_export_area' ? '1200px' : '900px';
-            wrapper.style.backgroundColor = '#1a1a24';
-            wrapper.style.padding = '30px';
-            wrapper.style.color = '#f5f5f5';
+            // 儲存原始狀態
+            const oldScroll = window.scrollY;
+            window.scrollTo(0, 0); // 確保 html2canvas 從視窗頂部開始抓取
 
-            const clone = sourceElement.cloneNode(true);
-            clone.style.display = 'block'; 
-            wrapper.appendChild(clone);
-            document.body.appendChild(wrapper);
+            const originalDisplay = element.style.display;
+            const originalPosition = element.style.position;
+            const originalTop = element.style.top;
+            const originalLeft = element.style.left;
+            const originalZIndex = element.style.zIndex;
 
+            // 將隱藏元素暫時搬到畫面左上角，但在最底層 (不會蓋住載入畫面)
+            element.style.display = 'block';
+            element.style.position = 'absolute';
+            element.style.top = '0';
+            element.style.left = '0';
+            element.style.zIndex = '-100'; 
+
+            // 給予 DOM 與圖片足夠的時間渲染 (重要)
             setTimeout(() => {
-                html2canvas(wrapper, {
+                html2canvas(element, {
                     backgroundColor: "#1a1a24",
                     scale: 1.5,
-                    useCORS: true
+                    useCORS: true,
+                    scrollY: 0
                 }).then(canvas => {
-                    document.body.removeChild(wrapper);
+                    // 恢復原狀
+                    element.style.display = originalDisplay;
+                    element.style.position = originalPosition;
+                    element.style.top = originalTop;
+                    element.style.left = originalLeft;
+                    element.style.zIndex = originalZIndex;
+                    window.scrollTo(0, oldScroll); // 恢復原本的捲軸位置
+
                     document.getElementById('export_loading').style.display = 'none';
 
                     const imgData = canvas.toDataURL("image/png");
@@ -934,11 +947,17 @@
 
                     document.getElementById('export_modal').style.display = 'flex';
                 }).catch(err => {
-                    if (document.body.contains(wrapper)) document.body.removeChild(wrapper);
+                    // 發生錯誤也要記得恢復原狀
+                    element.style.display = originalDisplay;
+                    element.style.position = originalPosition;
+                    element.style.top = originalTop;
+                    element.style.left = originalLeft;
+                    element.style.zIndex = originalZIndex;
+                    window.scrollTo(0, oldScroll);
                     document.getElementById('export_loading').style.display = 'none';
                     alert("產生圖片失敗！");
                 });
-            }, 300);
+            }, 500); 
         }
 
         function exportCurrentHistory() {
