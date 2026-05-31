@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>賽馬娘冠軍集會紀錄器 專業圖鑑版 v28</title>
+    <title>賽馬娘冠軍集會紀錄器 專業圖鑑版 v29</title>
     <!-- 引入 html2canvas 截圖套件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -160,7 +160,8 @@
             <img id="preview_avatar" class="preview-avatar-btn" src="img/unknown.jpg" onclick="openAvatarModal()" title="點擊選擇頭像" onerror="this.src=''; this.style.backgroundColor='#555'">
             <input type="hidden" id="selected_filename" value="unknown.jpg">
             <div class="roster-input-group">
-                <input type="text" id="new_horse_name" placeholder="點擊左側頭像選擇，或輸入暱稱 (按Enter快速登錄)">
+                <!-- 綁定 Enter 鍵事件 -->
+                <input type="text" id="new_horse_name" placeholder="點擊左側頭像選擇，或輸入暱稱 (按Enter快速登錄)" onkeypress="if(event.key === 'Enter') addToRoster()">
                 <label><input type="checkbox" id="new_horse_debuff"> 咒馬</label>
                 <button onclick="addToRoster()">登錄</button>
             </div>
@@ -275,7 +276,7 @@
     <div id="history_modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('history_modal')">&times;</button>
-            <!-- 加上 padding-right: 40px 防止按鈕與叉叉重疊 -->
+            <!-- 加上 padding-right 防止按鈕與叉叉重疊 -->
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #4CAF50; margin-bottom: 15px; padding-bottom: 10px; flex-wrap: wrap; gap: 10px; padding-right: 40px;">
                 <h2 style="border:none; margin: 0;">📜 歷史戰績</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -313,13 +314,10 @@
     </div>
 
     <!-- 隱藏的截圖專用容器 (完全避開顯示干擾) -->
-    <div id="daily_export_area" style="position: absolute; top: -9999px; left: 0; width: 0; height: 0; overflow: hidden; opacity: 0; z-index: -100;"></div>
-    <div id="summary_export_area" style="position: absolute; top: -9999px; left: 0; width: 0; height: 0; overflow: hidden; opacity: 0; z-index: -100;"></div>
+    <div id="daily_export_area" style="display: none;"></div>
+    <div id="summary_export_area" style="display: none;"></div>
 
     <script>
-        // ==========================================
-        // ⚠️ 【完整 254 張圖片清單】 ⚠️
-        // ==========================================
         const AVAILABLE_IMAGES = [
             "unknown.jpg", "kiseki.jpg", "八重無敵(戰裝).png", "八重無敵.jpg", "丸善斯基(泳裝).jpg", "丸善斯基(新年).jpg",
             "丸善斯基.jpg", "千明代表(新年).jpg", "千明代表.jpg", "大和赤驥(聖誕節).jpg", "大和赤驥.jpg", "大鳴大放.png",
@@ -368,13 +366,6 @@
         let roster = JSON.parse(localStorage.getItem('uma_roster')) || [];
         let records = JSON.parse(localStorage.getItem('uma_records')) || [];
         let currentRanks = { a: null, b: null, c: null };
-
-        // 綁定輸入框 Enter 鍵功能
-        document.getElementById('new_horse_name').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                addToRoster();
-            }
-        });
 
         function getBaseName(name) { return name.split('(')[0]; }
         function formatName(name) { return name.replace(/\((.*?)\)/g, '<br>$1'); }
@@ -727,7 +718,6 @@
                 const hInfo = roster.find(r => r.name === horseName) || { image: "unknown.jpg" };
                 const imgSrc = hInfo.image && hInfo.image !== "unknown.jpg" ? `img/${hInfo.image}` : getHorseImg(horseName);
                 
-                // 決賽如果贏了顯示"第一名"，否則維持原本格式
                 let winText = isFinals ? "第一名" : `${horseWins[horseName]} 勝`;
                 
                 horseStatsArr.push(`
@@ -926,44 +916,38 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
 
-        // --- 強大的非 cloneNode 截圖引擎 ---
+        // --- 無敵渲染引擎 (獨立 DOM，避免隱藏或捲軸問題) ---
         function generateImageFromElement(elementId, filename) {
-            const element = document.getElementById(elementId);
-            if (!element || element.innerHTML.trim() === "") {
+            const sourceElement = document.getElementById(elementId);
+            if (!sourceElement || sourceElement.innerHTML.trim() === "") {
                 return alert("沒有內容可以匯出！");
             }
 
             document.getElementById('export_loading').style.display = 'flex';
 
-            const oldScroll = window.scrollY;
-            window.scrollTo(0, 0); 
+            // 建立專屬渲染容器
+            const renderWrapper = document.createElement('div');
+            renderWrapper.style.position = 'absolute';
+            renderWrapper.style.top = '-9999px'; // 移出可視區
+            renderWrapper.style.left = '0';
+            renderWrapper.style.width = elementId === 'summary_export_area' ? '1200px' : '1000px';
+            renderWrapper.style.backgroundColor = '#1a1a24';
+            renderWrapper.style.color = '#f5f5f5';
+            renderWrapper.style.padding = '30px';
+            renderWrapper.style.zIndex = '-1000';
+            
+            // 複製內容
+            renderWrapper.innerHTML = sourceElement.innerHTML;
+            document.body.appendChild(renderWrapper);
 
-            const originalDisplay = element.style.display;
-            const originalPosition = element.style.position;
-            const originalTop = element.style.top;
-            const originalLeft = element.style.left;
-            const originalZIndex = element.style.zIndex;
-
-            element.style.display = 'block';
-            element.style.position = 'absolute';
-            element.style.top = '0';
-            element.style.left = '0';
-            element.style.zIndex = '-100'; 
-
+            // 等待圖片與字體渲染
             setTimeout(() => {
-                html2canvas(element, {
+                html2canvas(renderWrapper, {
                     backgroundColor: "#1a1a24",
                     scale: 1.5,
-                    useCORS: true,
-                    scrollY: 0
+                    useCORS: true
                 }).then(canvas => {
-                    element.style.display = originalDisplay;
-                    element.style.position = originalPosition;
-                    element.style.top = originalTop;
-                    element.style.left = originalLeft;
-                    element.style.zIndex = originalZIndex;
-                    window.scrollTo(0, oldScroll);
-
+                    document.body.removeChild(renderWrapper);
                     document.getElementById('export_loading').style.display = 'none';
 
                     const imgData = canvas.toDataURL("image/png");
@@ -976,12 +960,9 @@
 
                     document.getElementById('export_modal').style.display = 'flex';
                 }).catch(err => {
-                    element.style.display = originalDisplay;
-                    element.style.position = originalPosition;
-                    element.style.top = originalTop;
-                    element.style.left = originalLeft;
-                    element.style.zIndex = originalZIndex;
-                    window.scrollTo(0, oldScroll);
+                    if (document.body.contains(renderWrapper)) {
+                        document.body.removeChild(renderWrapper);
+                    }
                     document.getElementById('export_loading').style.display = 'none';
                     alert("產生圖片失敗！");
                 });
