@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>賽馬娘冠軍集會紀錄器 專業圖鑑版 v18</title>
+    <title>賽馬娘冠軍集會紀錄器 專業圖鑑版 v19</title>
+    <!-- 引入 html2canvas 截圖套件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a24; color: #f5f5f5; margin: 0; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
@@ -42,9 +43,11 @@
         
         .horse-setup { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; background: #323240; padding: 12px; border-radius: 8px; }
         .horse-input-row { display: flex; flex-direction: row; align-items: center; gap: 15px; }
-        .input-display-area { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-width: 90px; }
-        .input-display-area img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background-color: #222; }
-        .input-display-area span { font-size: 16px; font-weight: bold; text-align: center; line-height: 1.2; word-break: break-all; }
+        
+        /* 輸入區改為頭像在左，名字在右 */
+        .input-display-area { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; min-width: 150px; }
+        .input-display-area img { width: 65px; height: 65px; border-radius: 8px; object-fit: cover; background-color: #222; }
+        .input-display-area span { font-size: 16px; font-weight: bold; text-align: left; line-height: 1.3; }
 
         .rank-group { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; justify-content: flex-start; align-items: center; }
         .rank-btn { flex: 1; min-width: 35px; max-width: 48px; background-color: #444; color: white; border: 1px solid #555; border-radius: 5px; padding: 12px 0; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.1s; }
@@ -59,19 +62,23 @@
         .undo-btn { background-color: #ff9800; }
         .undo-btn:hover { background-color: #e68a00; }
         
+        /* 大表樣式 (字體放大，加入金銀銅色) */
         .grid-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #323240; border-radius: 8px; overflow: hidden; table-layout: fixed; }
-        .grid-table th, .grid-table td { border: 1px solid #444; padding: 8px 5px; text-align: center; word-wrap: break-word; }
-        .grid-table th { background-color: #2b2b36; color: #4CAF50; font-size: 16px; }
-        .grid-table td { font-size: 22px; font-weight: bold; vertical-align: middle; }
-        .rank-1 { color: #4CAF50; }
-        .memo-row td { font-size: 14px !important; font-weight: normal !important; color: #aaa; background-color: #2a2a35; }
+        .grid-table th, .grid-table td { border: 1px solid #444; padding: 10px 5px; text-align: center; word-wrap: break-word; }
+        .grid-table th { background-color: #2b2b36; color: #4CAF50; font-size: 18px; }
+        .grid-table td { font-size: 28px; font-weight: bold; vertical-align: middle; }
         
-        .table-avatar-container { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 5px 0; }
-        .table-avatar { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; }
-        .table-name { font-size: 16px; line-height: 1.2; }
-
+        /* 名次專屬顏色 */
+        .rank-1 { color: #FFD700 !important; text-shadow: 0 0 8px rgba(255,215,0,0.4); } /* 金 */
+        .rank-2 { color: #C0C0C0 !important; text-shadow: 0 0 8px rgba(192,192,192,0.4); } /* 銀 */
+        .rank-3 { color: #CD7F32 !important; text-shadow: 0 0 8px rgba(205,127,50,0.4); } /* 銅 */
+        
+        .memo-row td { font-size: 16px !important; font-weight: normal !important; color: #aaa; background-color: #2a2a35; }
+        
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: #252530; padding: 25px; border-radius: 12px; width: 90%; max-width: 850px; max-height: 85vh; overflow-y: auto; border: 1px solid #4CAF50; position: relative; }
+        .summary-modal-content { max-width: 1200px !important; }
+        
         .close-modal { position: absolute; right: 20px; top: 15px; background: none; color: #aaa; font-size: 32px; cursor: pointer; padding: 0; }
         .close-modal:hover { color: white; background: none; }
 
@@ -79,7 +86,7 @@
         .avatar-picker-wrapper { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: 8px; border-radius: 8px; border: 2px solid transparent; transition: 0.2s; background: #323240; }
         .avatar-picker-wrapper:hover { border-color: #4CAF50; transform: scale(1.05); }
         .avatar-picker-img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background-color: #555; }
-        .avatar-picker-name { font-size: 13px; font-weight: bold; text-align: center; line-height: 1.2; color: #fff; }
+        .avatar-picker-name { font-size: 14px; font-weight: bold; text-align: center; line-height: 1.2; color: #fff; }
 
         .horse-btn-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; justify-content: center; }
         .horse-square-btn { width: 105px; height: 145px; background: #323240; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; padding: 10px 4px; transition: 0.2s; color: white; }
@@ -103,9 +110,22 @@
         
         .fallback-img { background-color: #555; display: inline-block; }
 
-        /* 隱藏的總結報表容器 */
-        #summary_export_area { display: none; }
+        .summary-grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .summary-day-block { background: #1e1e28; padding: 20px; border-radius: 12px; border: 1px solid #444; border-top: 5px solid #4CAF50; }
+        .summary-finals-block { background: #1e1e28; padding: 20px; border-radius: 12px; border: 1px solid #444; border-top: 5px solid #FF9800; grid-column: span 2; }
+        .summary-header { text-align: center; margin-bottom: 30px; border-bottom: 2px dashed #444; padding-bottom: 20px; }
+        .summary-header h1 { color: #ffeb3b; font-size: 42px; margin: 0 0 10px 0; }
 
+        /* 單日數據總結面板 */
+        .daily-stats-panel { background-color: #323240; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #2196F3; }
+        .daily-stats-title { font-size: 20px; font-weight: bold; color: #fff; margin-bottom: 10px; }
+        .daily-stats-detail { font-size: 16px; color: #ddd; }
+        .daily-stats-detail span { color: #ffeb3b; margin-right: 15px; font-weight: bold; }
+
+        @media (max-width: 900px) {
+            .summary-grid-layout { grid-template-columns: 1fr; }
+            .summary-finals-block { grid-column: span 1; }
+        }
         @media (max-width: 600px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .avatar-grid { grid-template-columns: repeat(4, 1fr); }
@@ -199,6 +219,7 @@
         </div>
     </div>
 
+    <!-- 彈出視窗：頭像選擇 -->
     <div id="avatar_modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('avatar_modal')">&times;</button>
@@ -208,6 +229,7 @@
         </div>
     </div>
 
+    <!-- 彈出視窗：進階戰績 -->
     <div id="stats_modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('stats_modal')">&times;</button>
@@ -219,14 +241,15 @@
         </div>
     </div>
 
+    <!-- 彈出視窗：歷史明細 -->
     <div id="history_modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('history_modal')">&times;</button>
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #4CAF50; margin-bottom: 15px; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
                 <h2 style="border:none; margin: 0;">📜 歷史戰績</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="previewFinalSummary()" style="background-color: #FF9800; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">🏆 產生【最終總結報表】</button>
                     <button onclick="exportCurrentHistory()" style="background-color: #2196F3; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">📸 產生【本頁戰績】圖片</button>
-                    <button onclick="exportFinalSummary()" style="background-color: #FF9800; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">🏆 產生【最終總結報表】</button>
                 </div>
             </div>
             <div class="history-tabs-container" id="history_tabs"></div>
@@ -234,32 +257,42 @@
         </div>
     </div>
 
+    <!-- 彈出視窗：最終總結報表預覽 (可使用系統截圖) -->
+    <div id="summary_preview_modal" class="modal-overlay" style="z-index: 150;">
+        <div class="modal-content summary-modal-content">
+            <button class="close-modal" onclick="closeModal('summary_preview_modal')">&times;</button>
+            <div style="text-align: right; margin-bottom: 10px;">
+                <p style="color: #aaa; font-size: 14px; margin: 0 0 10px 0; text-align: center;">👇 報表已產生！您現在可以使用系統截圖 (Win+Shift+S / Cmd+Shift+4) 截下整個畫面。</p>
+                <button onclick="exportSummaryToImage()" style="background-color: #2196F3; width: auto; padding: 8px 15px; font-size: 14px;">📸 直接下載完整長圖</button>
+            </div>
+            <div id="summary_preview_area" style="background-color: #1a1a24; padding: 30px; border-radius: 12px; border: 2px dashed #4CAF50;"></div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗：截圖結果預覽與下載 -->
     <div id="export_modal" class="modal-overlay" style="z-index: 200;">
-        <div class="modal-content" style="max-width: 95%; text-align: center;">
+        <div class="modal-content" style="max-width: 90%; text-align: center;">
             <button class="close-modal" onclick="closeModal('export_modal')">&times;</button>
-            <h2 style="border:none; margin-top: 0;">📸 戰績報表已產生</h2>
-            <p style="color: #aaa; margin-bottom: 15px; font-size: 16px;">您可以直接對著下方圖片按「右鍵」選擇「複製圖片」或「另存圖片」。</p>
+            <h2 style="border:none; margin-top: 0;">📸 圖片下載區</h2>
             <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 15px;">
                 <a id="download_btn" href="#" download="image.png" style="text-decoration: none;">
-                    <button style="background-color: #2196F3; width: auto; padding: 10px 20px;">📥 直接下載圖片</button>
+                    <button style="background-color: #2196F3; width: auto; padding: 10px 20px;">📥 下載圖片</button>
                 </a>
+                <button onclick="copyImageToClipboard()" id="copy_btn" style="background-color: #4CAF50; width: auto; padding: 10px 20px;">📋 複製圖片到剪貼簿</button>
             </div>
-            <div style="overflow: auto; max-height: 60vh; border: 2px dashed #555; border-radius: 8px; padding: 10px; background: #1a1a24;">
+            <p style="color: #aaa; margin-bottom: 15px; font-size: 14px;">若無法下載，您可以直接對著下方圖片按「右鍵」選擇「另存圖片」。</p>
+            <div style="overflow: auto; max-height: 55vh; border: 2px dashed #555; border-radius: 8px; padding: 10px; background: #1a1a24;">
                 <img id="exported_image" style="max-width: 100%; display: block; margin: 0 auto; user-select: auto; pointer-events: auto;">
             </div>
         </div>
     </div>
 
+    <!-- 載入中遮罩 -->
     <div id="export_loading" class="modal-overlay" style="z-index: 300; flex-direction: column; color: white; font-size: 24px; font-weight: bold;">
-        ⏳ 系統正在為您繪製高畫質圖片，請稍候...
+        ⏳ 正在為您繪製高畫質圖片，請稍候...
     </div>
 
-    <div id="summary_export_area"></div>
-
     <script>
-        // ==========================================
-        // ⚠️ 【修復：勝利奬券 檔名字元】 ⚠️
-        // ==========================================
         const AVAILABLE_IMAGES = [
             "unknown.jpg", "kiseki.jpg", "八重無敵(戰裝).png", "八重無敵.jpg", "丸善斯基(泳裝).jpg", "丸善斯基(新年).jpg",
             "丸善斯基.jpg", "千明代表(新年).jpg", "千明代表.jpg", "大和赤驥(聖誕節).jpg", "大和赤驥.jpg", "大鳴大放.png",
@@ -288,8 +321,7 @@
             "神鷹.jpg", "草上飛(幻想).jpg", "草上飛(新年).jpg", "草上飛.jpg", "荒漠英雄(秋).jpg", "荒漠英雄.jpg", "迷人景緻.jpg",
             "高尚駿逸(泳裝).jpg", "高尚駿逸.png", "唯獨愛你(育馬者盃).jpg", "唯獨愛你.jpg", "採珠(萬聖節).jpg", "採珠.jpg",
             "曼哈頓咖啡(情人節).png", "曼哈頓咖啡.jpg", "第一紅寶(禮服).png", "第一紅寶.jpg", "雪之美人(情人節).png", "雪之美人.jpg",
-            "凱旋芭蕾.jpg", "創升(溫泉).jpg", "創升.png", 
-            "勝利奬券(UAF).png", "勝利奬券(蒸汽龐克).jpg", "勝利奬券.jpg", // 已修正為「奬」
+            "凱旋芭蕾.jpg", "創升(溫泉).jpg", "創升.png", "勝利奬券(UAF).png", "勝利奬券(蒸汽龐克).jpg", "勝利奬券.jpg",
             "喜嘉奇蹟(秋).jpg", "喜嘉奇蹟.jpg", "富士奇石(啦啦隊).jpg", "富士奇石(禮服).jpg", "富士奇石.jpg", "無需理由.jpg",
             "無聲鈴鹿(泳裝).jpg", "無聲鈴鹿.jpg", "琵琶晨光(聖誕節).jpg", "琵琶晨光(機械).jpg", "琵琶晨光.jpg", "菱亞馬遜(花嫁).jpg",
             "菱亞馬遜.jpg", "菱奇蹟(秋).jpg", "菱奇蹟.jpg", "菱曙(萬聖節).jpg", "菱曙.jpg", "萊茵實力(劇情).jpg", "萊茵實力.png",
@@ -305,7 +337,6 @@
             "櫻花千代王(禮服).jpg", "櫻花千代王.jpg", "櫻花桂冠(新年).jpg", "櫻花桂冠.jpg", "櫻花驀進王(禮服).jpg",
             "櫻花驀進王(體育節).jpg", "櫻花驀進王.jpg", "鶴丸強志.jpg"
         ];
-        // ==========================================
 
         let roster = JSON.parse(localStorage.getItem('uma_roster')) || [];
         let records = JSON.parse(localStorage.getItem('uma_records')) || [];
@@ -626,23 +657,56 @@
             document.getElementById('today_win_rate').innerHTML = `${currentDayMatches > 0 ? ((currentDayWins/currentDayMatches)*100).toFixed(1) : "0.0"}% <span style="font-size:16px; color:#aaa">(${currentDayWins}/${currentDayMatches})</span>`;
         }
 
+        // 動態產生單日戰績統計 HTML
+        function generateDayStatsHTML(dayRecords) {
+            if (dayRecords.length === 0) return "";
+            let totalMatches = dayRecords.length;
+            let totalWins = 0;
+            let horseWins = {};
+
+            dayRecords.forEach(r => {
+                let matchWon = false;
+                r.lineup.forEach(h => {
+                    if (!h.isDebuff && h.rank === 1) {
+                        matchWon = true;
+                        horseWins[h.name] = (horseWins[h.name] || 0) + 1;
+                    }
+                });
+                if (matchWon) totalWins++;
+            });
+
+            let html = `<div class="daily-stats-panel">`;
+            html += `<div class="daily-stats-title">📊 本日戰績結算：${totalWins} 勝 / ${totalMatches} 場 (勝率 ${((totalWins/totalMatches)*100).toFixed(1)}%)</div>`;
+            
+            let horseStatsArr = [];
+            for (let horse in horseWins) {
+                horseStatsArr.push(`<span>${formatName(horse)}: ${horseWins[horse]} 勝</span>`);
+            }
+            if(horseStatsArr.length > 0){
+                html += `<div class="daily-stats-detail">🏆 勝場分佈：${horseStatsArr.join('')}</div>`;
+            } else {
+                html += `<div class="daily-stats-detail" style="color:#888;">🏆 勝場分佈：本日無勝場</div>`;
+            }
+            html += `</div>`;
+            return html;
+        }
+
         function buildGridHTML(chunkArray, titleLabel) {
             if (chunkArray.length === 0) return "";
             let html = `<div style="margin-bottom: 25px;"><h3 style="color:#fff; border-bottom:1px solid #555; padding-bottom:5px;">${titleLabel}</h3>`;
-            html += `<table class="grid-table"><tr><th style="width:25%;">上場陣容</th><th>M1</th><th>M2</th><th>M3</th><th>M4</th><th>M5</th></tr>`;
+            html += `<table class="grid-table"><tr><th style="width:35%;">上場陣容</th><th>M1</th><th>M2</th><th>M3</th><th>M4</th><th>M5</th></tr>`;
             
             const firstMatchLineup = chunkArray[0].lineup;
             for (let i = 0; i < 3; i++) {
                 const horse = firstMatchLineup[i];
-                
                 const imgSrc = horse.image && horse.image !== "unknown.jpg" ? `img/${horse.image}` : getHorseImg(horse.name);
                 const imgHTML = `<img class="table-avatar" src="${imgSrc}" onerror="this.src='img/unknown.jpg'; this.style.backgroundColor='#222'">`;
                 const nameColor = horse.isDebuff ? '#aaa' : '#f5f5f5';
 
                 html += `<tr><td>
-                            <div class="table-avatar-container" style="color:${nameColor};">
+                            <div class="table-avatar-container" style="display:flex; flex-direction:row; justify-content:flex-start; padding-left:15px; gap:15px; color:${nameColor};">
                                 ${imgHTML}
-                                <span class="table-name">${formatName(horse.name)}</span>
+                                <span class="table-name" style="font-size:18px; text-align:left;">${formatName(horse.name)}</span>
                             </div>
                          </td>`;
                          
@@ -653,7 +717,11 @@
                         if (matchHorse.isDebuff || rank === "-") {
                             html += `<td style="color:#666;">-</td>`;
                         } else {
-                            html += `<td class="${rank === 1 ? 'rank-1' : ''}">${rank}</td>`;
+                            let rankClass = "";
+                            if (rank === 1) rankClass = "rank-1";
+                            else if (rank === 2) rankClass = "rank-2";
+                            else if (rank === 3) rankClass = "rank-3";
+                            html += `<td class="${rankClass}">${rank}</td>`;
                         }
                     } else { html += `<td></td>`; }
                 }
@@ -701,14 +769,18 @@
             }).join('');
             
             const container = document.getElementById('history_table_container');
-            const dayRecords = records.filter(r => r.match_id >= activeBlock*20+1 && r.match_id <= (activeBlock===4?81:activeBlock*20+20));
+            const minMatch = activeBlock * 20 + 1;
+            const maxMatch = activeBlock === 4 ? 81 : activeBlock * 20 + 20;
+            const dayRecords = records.filter(r => r.match_id >= minMatch && r.match_id <= maxMatch);
             
             if (dayRecords.length === 0) {
                 container.innerHTML = "<p style='color:#888; text-align:center; margin-top:20px; font-size:18px;'>這一天還沒有戰績喔！</p>";
                 return;
             }
             
-            let html = "";
+            // 加入當日戰績結算列
+            let html = generateDayStatsHTML(dayRecords);
+            
             for (let i = 0; i < dayRecords.length; i += 5) {
                 const chunk = dayRecords.slice(i, i + 5);
                 html += buildGridHTML(chunk, getStageInfo(chunk[0].match_id).shortTitle);
@@ -767,90 +839,85 @@
         window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
         
         // --- 強大的截圖匯出引擎 ---
-        function generateImageFromElement(elementId, filename) {
-            const element = document.getElementById(elementId);
-            if (!element || element.innerHTML.trim() === "" || element.innerText.includes("這一天還沒有戰績喔！")) {
-                return alert("沒有內容可以匯出！");
+        function generateImageFromHTML(containerId, filename, isSummary = false) {
+            const originalContainer = document.getElementById(containerId);
+            if (!originalContainer || originalContainer.innerText.includes("這一天還沒有戰績喔！") || originalContainer.innerHTML.trim() === "") {
+                return alert("目前沒有戰績可以匯出！");
             }
-
+            
             document.getElementById('export_loading').style.display = 'flex';
-
-            // 建立一個乾淨、無捲軸干擾的畫布容器
+            
+            const clone = originalContainer.cloneNode(true);
             const wrapper = document.createElement('div');
             wrapper.style.position = 'absolute';
-            wrapper.style.top = '-9999px';
+            wrapper.style.top = '-99999px';
             wrapper.style.left = '0';
-            wrapper.style.width = elementId === 'summary_export_area' ? '1200px' : '900px';
+            wrapper.style.width = isSummary ? '1200px' : '1000px'; 
             wrapper.style.backgroundColor = '#1a1a24';
             wrapper.style.padding = '30px';
             wrapper.style.color = '#f5f5f5';
-
-            const clone = element.cloneNode(true);
-            if (elementId === 'summary_export_area') {
-                clone.style.display = 'block'; // 確保總結表完整顯示
-            }
+            
+            if (isSummary) clone.style.display = 'block';
             wrapper.appendChild(clone);
             document.body.appendChild(wrapper);
-
+            
             html2canvas(wrapper, {
                 backgroundColor: "#1a1a24",
-                scale: 1.5, // 提高解析度
+                scale: 1.5,
                 useCORS: true
             }).then(canvas => {
                 document.body.removeChild(wrapper);
                 document.getElementById('export_loading').style.display = 'none';
-
+                
                 const imgData = canvas.toDataURL("image/png");
                 const expImg = document.getElementById('exported_image');
                 expImg.src = imgData;
-
-                // 確保圖片可以被右鍵點擊與複製
                 expImg.style.pointerEvents = 'auto';
                 expImg.style.userSelect = 'auto';
-
-                // 設定下載按鈕的連結
+                
                 const dlBtn = document.getElementById('download_btn');
                 dlBtn.href = imgData;
                 dlBtn.download = filename;
-
+                
                 document.getElementById('export_modal').style.display = 'flex';
             }).catch(err => {
                 if(document.body.contains(wrapper)) document.body.removeChild(wrapper);
                 document.getElementById('export_loading').style.display = 'none';
-                alert("產生圖片失敗！");
+                alert("圖片產生失敗！");
             });
         }
 
         function exportCurrentHistory() {
-            generateImageFromElement('history_table_container', `賽馬娘單日戰績_${new Date().toISOString().slice(0,10)}.png`);
+            generateImageFromHTML('history_table_container', `賽馬娘單日戰績_${new Date().toISOString().slice(0,10)}.png`, false);
         }
 
-        function exportFinalSummary() {
+        function previewFinalSummary() {
             if (records.length === 0) return alert("目前完全沒有戰績紀錄！");
-
-            const summaryContainer = document.getElementById('summary_export_area');
+            
+            const summaryContainer = document.getElementById('summary_preview_area');
             let html = `
-                <div class="summary-header" style="text-align:center; margin-bottom:30px; border-bottom:2px dashed #444; padding-bottom:20px;">
-                    <h1 style="color:#ffeb3b; font-size:42px; margin:0 0 10px 0;">🏆 賽馬娘 冠軍集會 最終戰績總結 🏆</h1>
+                <div class="summary-header">
+                    <h1>🏆 賽馬娘 冠軍集會 最終戰績總結 🏆</h1>
                     <h2 id="summary_overall_stats" style="color:#4CAF50;"></h2>
                 </div>
-                <div class="summary-grid-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                <div class="summary-grid-layout">
             `;
-
+            
             const group = getMaxWins(0, 39) >= 3 ? "A組" : "B組";
             const dayLabels = ["預賽第1天", "預賽第2天", `${group}複賽第1天`, `${group}複賽第2天`];
-
+            
             for (let block = 0; block < 4; block++) {
-                html += `<div style="background:#252530; padding:20px; border-radius:12px; border-top:5px solid #4CAF50;">
+                html += `<div class="summary-day-block">
                             <h2 style="color:#ffeb3b; text-align:center; border-bottom:1px solid #555; padding-bottom:10px;">${dayLabels[block]}</h2>`;
-
+                
                 const minMatch = block * 20 + 1;
                 const maxMatch = minMatch + 19;
                 const dayRecords = records.filter(r => r.match_id >= minMatch && r.match_id <= maxMatch);
-
+                
                 if (dayRecords.length === 0) {
                     html += `<p style="text-align:center; color:#888;">無紀錄</p>`;
                 } else {
+                    html += generateDayStatsHTML(dayRecords);
                     for (let i = 0; i < dayRecords.length; i += 5) {
                         const chunk = dayRecords.slice(i, i + 5);
                         html += buildGridHTML(chunk, getStageInfo(chunk[0].match_id).shortTitle);
@@ -858,25 +925,49 @@
                 }
                 html += `</div>`;
             }
-
-            html += `</div><div style="background:#252530; padding:20px; border-radius:12px; border-top:5px solid #FF9800; grid-column: span 2;">
+            
+            html += `</div><div class="summary-finals-block">
                         <h2 style="color:#FF9800; text-align:center; border-bottom:1px solid #555; padding-bottom:10px;">🏆 決賽 🏆</h2>`;
             const finalsRecord = records.filter(r => r.match_id === 81);
             if (finalsRecord.length === 0) {
                 html += `<p style="text-align:center; color:#888;">無紀錄或未晉級</p>`;
             } else {
+                html += generateDayStatsHTML(finalsRecord);
                 html += buildGridHTML(finalsRecord, getStageInfo(81).title);
             }
             html += `</div>`;
-
+            
             summaryContainer.innerHTML = html;
-
+            
             const totalMatches = records.length;
             const totalWins = records.filter(r => r.lineup.some(h => !h.isDebuff && h.rank === 1)).length;
             document.getElementById('summary_overall_stats').innerText = `總勝率: ${((totalWins/totalMatches)*100).toFixed(1)}% (${totalWins}/${totalMatches})`;
+            
+            closeModal('history_modal');
+            document.getElementById('summary_preview_modal').style.display = 'flex';
+        }
 
-            // 呼叫統一的截圖引擎
-            generateImageFromElement('summary_export_area', `賽馬娘最終總結_${new Date().toISOString().slice(0,10)}.png`);
+        function exportSummaryToImage() {
+            generateImageFromHTML('summary_preview_area', `賽馬娘最終總結_${new Date().toISOString().slice(0,10)}.png`, true);
+        }
+
+        function copyImageToClipboard() {
+            const img = document.getElementById('exported_image');
+            try {
+                fetch(img.src)
+                .then(res => res.blob())
+                .then(blob => {
+                    navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]).then(() => {
+                        alert('✅ 圖片已成功複製到剪貼簿！可以直接貼上 (Ctrl+V) 分享了。');
+                    }).catch(err => {
+                        alert('⚠️ 您的瀏覽器不允許網頁直接寫入剪貼簿，請點擊左側按鈕下載圖片。');
+                    });
+                });
+            } catch (e) {
+                alert('⚠️ 您的瀏覽器環境不支援此功能，請使用下載按鈕。');
+            }
         }
 
         initAvatarGrid();
