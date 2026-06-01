@@ -214,7 +214,7 @@
                 </div>
             </div>
 
-            <input type="text" id="memo" placeholder="備註 (選填：如對手陣容或失誤)">
+            <input type="text" id="memo" placeholder="備註 (選填)">
             
             <div class="action-btns">
                 <button onclick="addRecord()">儲存本場</button>
@@ -265,7 +265,7 @@
     <div id="stats_modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 900px;">
             <button class="close-modal" onclick="closeModal('stats_modal')">&times;</button>
-            <h2 style="border:none; margin-top: 0;">馬娘個別戰力分析</h2>
+            <h2 style="border:none; margin-top: 0;">馬娘勝率</h2>
             <div id="stats_horse_selector" class="horse-btn-grid"></div>
             <div id="stats_detail_container">
                 <p style="color:#aaa; text-align:center; font-size:16px;">請點選上方馬娘方塊查看戰績</p>
@@ -515,8 +515,8 @@
                 isLocked = false;
                 const prelimMax = getMaxWins(0, 39), semiMax = getMaxWins(40, 79);
                 const group = prelimMax >= 3 ? "A組" : "B組";
-                if (group === "A組" && semiMax >= 3) shortTitle = title = "A組決賽 (最終戰)";
-                else if ((group === "A組" || group === "B組") && semiMax >= 1) shortTitle = title = "B組決賽 (最終戰)";
+                if (group === "A組" && semiMax >= 3) shortTitle = title = "A組決賽";
+                else if ((group === "A組" || group === "B組") && semiMax >= 1) shortTitle = title = "B組決賽";
                 else { shortTitle = title = "未晉級決賽 (賽程結束)"; canPlay = false; }
             } else {
                 shortTitle = title = "冠軍集會全賽程結束";
@@ -530,7 +530,7 @@
             updateDropdownOptions();
             
             const stage = getStageInfo(records.length + 1);
-            const lockTag = stage.isLocked ? `<span class="lock-status locked">鎖定</span>` : (stage.canPlay ? `<span class="lock-status unlocked">可換馬</span>` : "");
+            const lockTag = stage.isLocked ? `<span class="lock-status locked">鎖定</span>` : (stage.canPlay ? `<span class="lock-status unlocked">可換陣容</span>` : "");
             document.getElementById('stage_display').innerHTML = `${stage.title} ${lockTag}`;
 
             ['a', 'b', 'c'].forEach((slot, idx) => {
@@ -725,7 +725,7 @@
                     html += `<div style="font-size: 28px; font-weight: bold; color: #aaa; margin-bottom: 20px;">下次再加油！</div>`;
                 }
             } else {
-                html += `<div style="font-size: 22px; font-weight: bold; color: #fff; margin-bottom: 20px;">本日戰績結算：${totalWins} 勝 / ${totalMatches} 場 (勝率 ${((totalWins/totalMatches)*100).toFixed(1)}%)</div>`;
+                html += `<div style="font-size: 22px; font-weight: bold; color: #fff; margin-bottom: 20px;">本日戰績：${totalWins} 勝 / ${totalMatches} 場 (勝率 ${((totalWins/totalMatches)*100).toFixed(1)}%)</div>`;
             }
 
             let horseStatsArr = [];
@@ -918,10 +918,10 @@
                     if (rank === 1) wins++; if (rank <= 2) top2++; if (rank <= 3) top3++;
                     recent5.push(rank);
                 });
-                html += `<div class="stat-box"><div>勝率 (1着)</div><div class="stat-val">${((wins/total)*100).toFixed(1)}%</div><div style="font-size:14px; color:#aaa;">${wins} / ${total}</div></div>
-                        <div class="stat-box"><div>連對率 (前二)</div><div class="stat-val">${((top2/total)*100).toFixed(1)}%</div><div style="font-size:14px; color:#aaa;">${top2} / ${total}</div></div>
-                        <div class="stat-box"><div>複勝率 (前三)</div><div class="stat-val">${((top3/total)*100).toFixed(1)}%</div><div style="font-size:14px; color:#aaa;">${top3} / ${total}</div></div>
-                        <div class="stat-box"><div>近5場走勢</div><div class="trend-container">
+                html += `<div class="stat-box"><div>勝率</div><div class="stat-val">${((wins/total)*100).toFixed(1)}%</div><div style="font-size:14px; color:#aaa;">${wins} / ${total}</div></div>
+                        <div class="stat-box"><div>連對率</div><div class="stat-val">${((top2/total)*100).toFixed(1)}%</div><div style="font-size:14px; color:#aaa;">${top2} / ${total}</div></div>
+                        <div class="stat-box"><div>複勝率</div><div class="stat-val">${((top3/total)*100).toFixed(1)}%</div><div style="font-size:14px; color:#aaa;">${top3} / ${total}</div></div>
+                        <div class="stat-box"><div>近5場戰績</div><div class="trend-container">
                         ${recent5.slice(-5).map(rank => `<span class="trend-circle ${rank===1?'win':''}">${rank}</span>`).join('')}</div></div>`;
             }
             html += `</div>`;
@@ -1004,7 +1004,7 @@
             let html = `
                 <div style="min-width: 1200px;">
                     <div class="summary-header" style="text-align:center; margin-bottom:30px; border-bottom:2px dashed #444; padding-bottom:20px;">
-                        <h1 style="color:#ffeb3b; font-size:42px; margin:0 0 10px 0;">🏆 賽馬娘 冠軍集會 最終戰績總結 🏆</h1>
+                        <h1 style="color:#ffeb3b; font-size:42px; margin:0 0 10px 0;">賽馬娘 冠軍集會 戰績總結</h1>
                         <h2 id="summary_overall_stats" style="color:#4CAF50; font-size: 28px;"></h2>
                     </div>
                     <div class="summary-grid-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
@@ -1040,7 +1040,7 @@
             }
             
             html += `</div><div class="summary-finals-block" style="display: flex; flex-direction: column; align-items: center;">
-                        <h2 style="color:#FF9800; text-align:center; border-bottom:1px solid #555; padding-bottom:10px; width: 100%;">🏆 決賽 🏆</h2>`;
+                        <h2 style="color:#FF9800; text-align:center; border-bottom:1px solid #555; padding-bottom:10px; width: 100%;">決賽</h2>`;
             const finalsRecord = records.filter(r => r.match_id === 81);
             if (finalsRecord.length === 0) {
                 html += `<p style="text-align:center; color:#888; font-size:18px;">無紀錄或未晉級</p>`;
