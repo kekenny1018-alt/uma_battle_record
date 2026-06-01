@@ -3,32 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>賽馬娘冠軍集會紀錄器 專業圖鑑版 v32</title>
+    <title>賽馬娘冠軍集會紀錄器 專業圖鑑版</title>
     <!-- 引入 html2canvas 截圖套件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a24; color: #f5f5f5; margin: 0; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            color: #f5f5f5; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            position: relative;
+        }
+
+        /* 滿版霧化背景設定 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -50px; left: -50px; right: -50px; bottom: -50px; /* 往外推避免邊緣模糊白邊 */
+            background-image: url('5週年.jpg');
+            background-size: cover;
+            background-position: center;
+            filter: blur(25px) brightness(0.4); /* 超級霧化並調暗 */
+            z-index: -1;
+        }
+
         .main-container { display: flex; gap: 20px; align-items: stretch; flex-wrap: wrap; }
-        .panel { background-color: #252530; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); box-sizing: border-box; }
+        
+        /* 面板加上微透明與毛玻璃效果，讓背景隱約透出 */
+        .panel { 
+            background-color: rgba(37, 37, 48, 0.85); 
+            backdrop-filter: blur(10px);
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+            box-sizing: border-box; 
+        }
+        
         .left-panel { flex: 1; min-width: 400px; }
         .right-panel { flex: 1.8; min-width: 500px; display: flex; flex-direction: column; }
         h2, h3 { color: #4CAF50; border-bottom: 1px solid #444; padding-bottom: 10px; margin-top: 0; }
         
         .win-rate-panel { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
-        .rate-box { flex: 1; min-width: 200px; background: #323240; border-left: 5px solid #FF9800; padding: 25px 15px; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
+        
+        /* 勝率面板維持垂直置中 */
+        .rate-box { 
+            flex: 1; min-width: 200px; background: rgba(50, 50, 64, 0.9); 
+            border-left: 5px solid #FF9800; padding: 25px 15px; 
+            border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+            display: flex; flex-direction: column; justify-content: center; 
+        }
         .rate-box.total { border-left-color: #4CAF50; }
         .rate-label { font-size: 16px; color: #aaa; margin-bottom: 10px; font-weight: bold; }
         .rate-value { font-size: 40px; font-weight: bold; color: #fff; line-height: 1.1; }
 
-        .stage-title { font-size: 22px; font-weight: bold; color: #ffeb3b; background: #333; padding: 10px 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+        .stage-title { font-size: 22px; font-weight: bold; color: #ffeb3b; background: rgba(51, 51, 51, 0.9); padding: 10px 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
         .lock-status { font-size: 14px; font-weight: normal; padding: 3px 8px; border-radius: 4px; margin-left: 10px; vertical-align: middle; }
         .unlocked { background-color: #4CAF50; color: white; }
         .locked { background-color: #e53935; color: white; }
 
-        input[type="text"], select { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; box-sizing: border-box; }
+        input[type="text"], select { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #555; background-color: rgba(51, 51, 51, 0.9); color: white; box-sizing: border-box; }
         input[disabled], select[disabled] { background-color: #444; color: #888; cursor: not-allowed; }
         
-        .roster-setup { display: flex; gap: 15px; margin-bottom: 10px; align-items: center; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; }
+        .roster-setup { display: flex; gap: 15px; margin-bottom: 10px; align-items: flex-start; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; }
         .preview-avatar-btn { width: 85px; height: 85px; border-radius: 8px; object-fit: cover; background-color: #444; cursor: pointer; border: 2px solid #555; transition: 0.2s; flex-shrink: 0; }
         .preview-avatar-btn:hover { border-color: #4CAF50; transform: scale(1.05); }
         
@@ -42,7 +81,7 @@
         .roster-tag img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
         .delete-btn { background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: 16px; font-weight: bold; }
         
-        .horse-setup { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; background: #323240; padding: 12px; border-radius: 8px; }
+        .horse-setup { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; background: rgba(50, 50, 64, 0.8); padding: 12px; border-radius: 8px; }
         .horse-input-row { display: flex; flex-direction: row; align-items: center; gap: 15px; }
         .input-display-area { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; width: 170px; flex-shrink: 0; }
         .input-display-area img { width: 65px; height: 65px; border-radius: 8px; object-fit: cover; background-color: #222; flex-shrink: 0; }
@@ -62,7 +101,7 @@
         .undo-btn:hover { background-color: #e68a00; }
         
         .tables-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; }
-        .grid-table { width: 100%; border-collapse: collapse; background: #323240; border-radius: 8px; overflow: hidden; table-layout: fixed; }
+        .grid-table { width: 100%; border-collapse: collapse; background: rgba(50, 50, 64, 0.9); border-radius: 8px; overflow: hidden; table-layout: fixed; }
         .grid-table th, .grid-table td { border: 1px solid #444; text-align: center; word-wrap: break-word; }
         .grid-table th { background-color: #2b2b36; color: #4CAF50; font-size: 16px; padding: 10px 5px; }
         
@@ -72,7 +111,7 @@
         .rank-2 { color: #C0C0C0 !important; text-shadow: 0 0 12px rgba(192,192,192,0.5); } 
         .rank-3 { color: #CD7F32 !important; text-shadow: 0 0 12px rgba(205,127,50,0.5); } 
         
-        .memo-row td { font-size: 15px !important; font-weight: normal !important; color: #aaa; background-color: #2a2a35; padding: 8px; }
+        .memo-row td { font-size: 15px !important; font-weight: normal !important; color: #aaa; background-color: rgba(42, 42, 53, 0.9); padding: 8px; }
         
         .table-avatar-img { 
             width: 60px !important; height: 60px !important; 
@@ -154,23 +193,27 @@
 <body>
 
     <div class="panel" style="margin-bottom: 20px;">
-        <h2 style="margin-bottom: 15px;">📋 馬娘名冊登錄</h2>
+        <h2 style="margin-bottom: 15px;">戰馬登錄</h2>
         <div class="roster-setup">
             <img id="preview_avatar" class="preview-avatar-btn" src="img/unknown.jpg" onclick="openAvatarModal()" title="點擊選擇頭像" onerror="this.src=''; this.style.backgroundColor='#555'">
             <input type="hidden" id="selected_filename" value="unknown.jpg">
-            <div class="roster-input-group">
-                <input type="text" id="new_horse_name" placeholder="點擊左側頭像選擇，或輸入暱稱 (按Enter快速登錄)" onkeypress="if(event.key === 'Enter') addToRoster()">
-                <label><input type="checkbox" id="new_horse_debuff"> 咒馬</label>
-                <button onclick="addToRoster()">登錄</button>
+            <div style="flex: 1; display: flex; flex-direction: column;">
+                <div class="roster-input-group">
+                    <input type="text" id="new_horse_name" placeholder="點擊左側頭像選擇馬娘" onkeypress="if(event.key === 'Enter') addToRoster()">
+                    <label><input type="checkbox" id="new_horse_debuff"> 咒馬</label>
+                    <button onclick="addToRoster()">登錄</button>
+                </div>
+                <div style="font-size: 13px; color: #aaa; margin-top: 8px; margin-left: 4px;">提示：可使用括弧( )做備註</div>
             </div>
         </div>
         <div style="text-align: right; margin-bottom: 15px;">
-            <button onclick="clearAllData()" style="background-color: #f44336; padding: 5px 10px; font-size: 14px; width: auto;">⚠️ 格式化全部資料</button>
+            <button onclick="clearAllData()" style="background-color: #f44336; padding: 5px 10px; font-size: 14px; width: auto;">格式化全部資料</button>
         </div>
         <div id="roster_display"></div>
     </div>
 
     <div class="main-container">
+        <!-- 左半部面板 -->
         <div class="panel left-panel">
             <div id="stage_display" class="stage-title">載入中...</div>
             <label>出賽陣容與名次點選</label>
@@ -211,14 +254,15 @@
             <input type="text" id="memo" placeholder="備註 (選填：如對手陣容或失誤)">
             
             <div class="action-btns">
-                <button onclick="addRecord()">💾 儲存本場</button>
-                <button class="undo-btn" onclick="undoLastRecord()">↩️ 復原</button>
+                <button onclick="addRecord()">儲存本場</button>
+                <button class="undo-btn" onclick="undoLastRecord()">復原</button>
             </div>
         </div>
 
+        <!-- 右半部面板 -->
         <div class="panel right-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px;">
-                <h2 style="margin: 0; border: none; padding: 0;">🎯 當前輪次戰況</h2>
+                <h2 style="margin: 0; border: none; padding: 0;">當前輪次戰況</h2>
             </div>
             
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
@@ -227,19 +271,19 @@
                 </div>
                 <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 15px;">
                     <div class="rate-box">
-                        <div class="rate-label" id="today_label">🔥 當日勝率 (預賽第一天)</div>
+                        <div class="rate-label" id="today_label">當日勝率 (預賽第一天)</div>
                         <div class="rate-value" id="today_win_rate">0.0% <br><span style="font-size:18px; color:#aaa">(0/0)</span></div>
                     </div>
                     <div class="rate-box total">
-                        <div class="rate-label">🏆 當前總勝率</div>
+                        <div class="rate-label">當前總勝率</div>
                         <div class="rate-value" id="total_win_rate">0.0% <br><span style="font-size:18px; color:#aaa">(0/0)</span></div>
                     </div>
                 </div>
             </div>
             
             <div style="display: flex; gap: 15px; margin-top: 30px; flex-wrap: wrap;">
-                <button style="background-color: #2196F3;" onclick="openStatsModal()">📊 戰績分析 (大數據)</button>
-                <button style="background-color: #9C27B0;" onclick="openHistoryModal()">📜 歷史明細與圖片輸出</button>
+                <button style="background-color: #2196F3;" onclick="openStatsModal()">戰績分析 (大數據)</button>
+                <button style="background-color: #9C27B0;" onclick="openHistoryModal()">歷史明細與圖片輸出</button>
             </div>
         </div>
     </div>
@@ -248,8 +292,8 @@
     <div id="avatar_modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 850px;">
             <button class="close-modal" onclick="closeModal('avatar_modal')">&times;</button>
-            <h2 style="border:none; margin-bottom: 15px; margin-top: 0;">🖼️ 選擇馬娘頭像</h2>
-            <input type="text" id="avatar_search" placeholder="🔍 輸入關鍵字搜尋馬娘..." onkeyup="filterAvatars()" style="margin-bottom: 15px; font-size: 16px;">
+            <h2 style="border:none; margin-bottom: 15px; margin-top: 0;">選擇馬娘頭像</h2>
+            <input type="text" id="avatar_search" placeholder="輸入關鍵字搜尋馬娘..." onkeyup="filterAvatars()" style="margin-bottom: 15px; font-size: 16px;">
             <div id="avatar_grid" class="avatar-grid"></div>
         </div>
     </div>
@@ -258,7 +302,7 @@
     <div id="stats_modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 900px;">
             <button class="close-modal" onclick="closeModal('stats_modal')">&times;</button>
-            <h2 style="border:none; margin-top: 0;">📊 馬娘個別戰力分析</h2>
+            <h2 style="border:none; margin-top: 0;">馬娘個別戰力分析</h2>
             <div id="stats_horse_selector" class="horse-btn-grid"></div>
             <div id="stats_detail_container">
                 <p style="color:#aaa; text-align:center; font-size:16px;">請點選上方馬娘方塊查看戰績</p>
@@ -271,10 +315,10 @@
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('history_modal')">&times;</button>
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #4CAF50; margin-bottom: 15px; padding-bottom: 10px; flex-wrap: wrap; gap: 10px; padding-right: 60px;">
-                <h2 style="border:none; margin: 0;">📜 歷史戰績</h2>
+                <h2 style="border:none; margin: 0;">歷史戰績</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button onclick="exportCurrentHistory()" style="background-color: #2196F3; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">📸 產生【本頁戰績】圖片</button>
-                    <button onclick="previewFinalSummary()" style="background-color: #FF9800; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">🏆 產生【最終總結報表】</button>
+                    <button onclick="exportCurrentHistory()" style="background-color: #2196F3; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">產生【本頁戰績】圖片</button>
+                    <button onclick="exportFinalSummary()" style="background-color: #FF9800; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">產生【最終總結報表】</button>
                 </div>
             </div>
             <div class="history-tabs-container" id="history_tabs"></div>
@@ -288,8 +332,8 @@
         <div class="modal-content" style="max-width: 1250px;">
             <button class="close-modal" onclick="closeModal('summary_preview_modal')">&times;</button>
             <div style="text-align: right; margin-bottom: 10px; padding-right: 60px;">
-                <p style="color: #aaa; font-size: 14px; margin: 0 0 10px 0; text-align: center;">👇 報表已產生！您現在可以使用系統截圖 (Win+Shift+S / Cmd+Shift+4) 截下整個畫面。</p>
-                <button onclick="exportSummaryToImage()" style="background-color: #2196F3; width: auto; padding: 8px 15px; font-size: 14px;">📸 直接下載完整長圖</button>
+                <p style="color: #aaa; font-size: 14px; margin: 0 0 10px 0; text-align: center;">報表已產生！您現在可以使用系統截圖 (Win+Shift+S / Cmd+Shift+4) 截下整個畫面。</p>
+                <button onclick="exportSummaryToImage()" style="background-color: #2196F3; width: auto; padding: 8px 15px; font-size: 14px;">嘗試直接由系統生成長圖 (若失敗請手動截圖)</button>
             </div>
             
             <div id="summary_preview_area" style="background-color: #1a1a24; padding: 30px; border-radius: 12px; border: 2px dashed #4CAF50; overflow-x: auto;">
@@ -302,12 +346,12 @@
     <div id="export_modal" class="modal-overlay" style="z-index: 200;">
         <div class="modal-content" style="max-width: 90%; text-align: center;">
             <button class="close-modal" onclick="closeModal('export_modal')">&times;</button>
-            <h2 style="border:none; margin-top: 0;">📸 圖片下載區</h2>
+            <h2 style="border:none; margin-top: 0;">圖片下載區</h2>
             <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 15px;">
                 <a id="download_btn" href="#" download="image.png" style="text-decoration: none;">
-                    <button style="background-color: #2196F3; width: auto; padding: 10px 20px;">📥 下載圖片</button>
+                    <button style="background-color: #2196F3; width: auto; padding: 10px 20px;">下載圖片</button>
                 </a>
-                <button onclick="copyImageToClipboard()" id="copy_btn" style="background-color: #4CAF50; width: auto; padding: 10px 20px;">📋 複製圖片到剪貼簿</button>
+                <button onclick="copyImageToClipboard()" id="copy_btn" style="background-color: #4CAF50; width: auto; padding: 10px 20px;">複製圖片到剪貼簿</button>
             </div>
             <p style="color: #aaa; margin-bottom: 15px; font-size: 14px;">若無法下載，您可以直接對著下方圖片按「右鍵」選擇「另存圖片」或「複製圖片」。</p>
             <div style="overflow: auto; max-height: 55vh; border: 2px dashed #555; border-radius: 8px; padding: 10px; background: #1a1a24;">
@@ -318,8 +362,12 @@
 
     <!-- 載入中遮罩 -->
     <div id="export_loading" class="modal-overlay" style="z-index: 300; flex-direction: column; color: white; font-size: 24px; font-weight: bold;">
-        ⏳ 正在為您繪製高畫質圖片，請稍候...
+        正在為您繪製高畫質圖片，請稍候...
     </div>
+
+    <!-- 隱藏的截圖專用容器 -->
+    <div id="daily_export_area" style="display: none;"></div>
+    <div id="summary_export_area" style="display: none;"></div>
 
     <script>
         const AVAILABLE_IMAGES = [
@@ -370,10 +418,6 @@
         let roster = JSON.parse(localStorage.getItem('uma_roster')) || [];
         let records = JSON.parse(localStorage.getItem('uma_records')) || [];
         let currentRanks = { a: null, b: null, c: null };
-
-        document.getElementById('new_horse_name').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') addToRoster();
-        });
 
         function getBaseName(name) { return name.split('(')[0]; }
         function formatName(name) { return name.replace(/\((.*?)\)/g, '<br>$1'); }
@@ -508,11 +552,11 @@
                 isLocked = false;
                 const prelimMax = getMaxWins(0, 39), semiMax = getMaxWins(40, 79);
                 const group = prelimMax >= 3 ? "A組" : "B組";
-                if (group === "A組" && semiMax >= 3) shortTitle = title = "🏆 A組決賽 (最終戰)";
-                else if ((group === "A組" || group === "B組") && semiMax >= 1) shortTitle = title = "🥈 B組決賽 (最終戰)";
-                else { shortTitle = title = "💀 未晉級決賽 (賽程結束)"; canPlay = false; }
+                if (group === "A組" && semiMax >= 3) shortTitle = title = "A組決賽 (最終戰)";
+                else if ((group === "A組" || group === "B組") && semiMax >= 1) shortTitle = title = "B組決賽 (最終戰)";
+                else { shortTitle = title = "未晉級決賽 (賽程結束)"; canPlay = false; }
             } else {
-                shortTitle = title = "🎉 冠軍集會全賽程結束";
+                shortTitle = title = "冠軍集會全賽程結束";
                 canPlay = false; isLocked = true;
             }
             return { match: global_match, title, shortTitle, isLocked, canPlay };
@@ -523,7 +567,7 @@
             updateDropdownOptions();
             
             const stage = getStageInfo(records.length + 1);
-            const lockTag = stage.isLocked ? `<span class="lock-status locked">🔒 鎖定</span>` : (stage.canPlay ? `<span class="lock-status unlocked">🔓 可換馬</span>` : "");
+            const lockTag = stage.isLocked ? `<span class="lock-status locked">鎖定</span>` : (stage.canPlay ? `<span class="lock-status unlocked">可換馬</span>` : "");
             document.getElementById('stage_display').innerHTML = `${stage.title} ${lockTag}`;
 
             ['a', 'b', 'c'].forEach((slot, idx) => {
@@ -589,7 +633,7 @@
                 
                 if (horse && horse.isDebuff) {
                     nameEl.style.color = '#aaa'; nameEl.innerHTML = formatName(horse.name);
-                    group.innerHTML = `<div style="color:#aaa; padding:15px 0; font-size: 16px; font-weight:bold;">🛡️ 戰術支援中</div>`;
+                    group.innerHTML = `<div style="color:#aaa; padding:15px 0; font-size: 16px; font-weight:bold;">戰術支援中</div>`;
                 } else {
                     nameEl.style.color = '#f5f5f5'; nameEl.innerHTML = formatName(horse.name);
                     group.innerHTML = Array.from({length: 9}, (_, i) => i+1).map(i => 
@@ -645,10 +689,10 @@
                 lineup.push({ name, isDebuff: horse.isDebuff, rank, image: horse.image });
             }
 
-            if (new Set(activeRanks).size !== activeRanks.length) return alert("⚠️ 名次衝突！");
+            if (new Set(activeRanks).size !== activeRanks.length) return alert("名次衝突！");
 
             const baseNames = lineup.map(h => getBaseName(h.name));
-            if (new Set(baseNames).size !== baseNames.length) return alert("⚠️ 陣容衝突！不能同時派出同一位馬娘的不同換裝！");
+            if (new Set(baseNames).size !== baseNames.length) return alert("陣容衝突！不能同時派出同一位馬娘的不同換裝！");
 
             records.push({ match_id: stageInfo.match, lineup, memo: document.getElementById('memo').value });
             
@@ -685,7 +729,7 @@
             const group = prelimMax >= 3 ? "A組" : "B組";
             let dayLabels = ["預賽第1天", "預賽第2天", `${group}複賽第1天`, `${group}複賽第2天`, "決賽"];
             
-            document.getElementById('today_label').innerText = `🔥 當日勝率 (${dayLabels[currentBlock]})`;
+            document.getElementById('today_label').innerText = `當日勝率 (${dayLabels[currentBlock]})`;
             document.getElementById('total_win_rate').innerHTML = `${totalMatches > 0 ? ((totalWins/totalMatches)*100).toFixed(1) : "0.0"}% <br><span style="font-size:18px; color:#aaa">(${totalWins}/${totalMatches})</span>`;
             document.getElementById('today_win_rate').innerHTML = `${currentDayMatches > 0 ? ((currentDayWins/currentDayMatches)*100).toFixed(1) : "0.0"}% <br><span style="font-size:18px; color:#aaa">(${currentDayWins}/${currentDayMatches})</span>`;
         }
@@ -713,12 +757,12 @@
             
             if (isFinals) {
                 if (totalWins > 0) {
-                    html += `<div style="font-size: 32px; font-weight: bold; color: #ffeb3b; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,235,59,0.5);">🎉 恭喜${finalGroup}1！ 🎉</div>`;
+                    html += `<div style="font-size: 32px; font-weight: bold; color: #ffeb3b; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,235,59,0.5);">恭喜${finalGroup}1！</div>`;
                 } else {
-                    html += `<div style="font-size: 28px; font-weight: bold; color: #aaa; margin-bottom: 20px;">💪 下次再加油！</div>`;
+                    html += `<div style="font-size: 28px; font-weight: bold; color: #aaa; margin-bottom: 20px;">下次再加油！</div>`;
                 }
             } else {
-                html += `<div style="font-size: 22px; font-weight: bold; color: #fff; margin-bottom: 20px;">📊 本日戰績結算：${totalWins} 勝 / ${totalMatches} 場 (勝率 ${((totalWins/totalMatches)*100).toFixed(1)}%)</div>`;
+                html += `<div style="font-size: 22px; font-weight: bold; color: #fff; margin-bottom: 20px;">本日戰績結算：${totalWins} 勝 / ${totalMatches} 場 (勝率 ${((totalWins/totalMatches)*100).toFixed(1)}%)</div>`;
             }
 
             let horseStatsArr = [];
@@ -739,7 +783,7 @@
             if(horseStatsArr.length > 0){
                 html += `<div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; align-items: stretch;">${horseStatsArr.join('')}</div>`;
             } else {
-                html += `<div style="color:#888; font-size: 16px;">🏆 本日無勝場</div>`;
+                html += `<div style="color:#888; font-size: 16px;">本日無勝場</div>`;
             }
             html += `</div>`;
             return html;
@@ -752,8 +796,7 @@
             let html = `<div style="${wrapperStyle}">`;
             
             let titleStyle = isFinals ? "color:#FFD700; border-bottom:none; padding-bottom:5px; font-size:20px; text-align:center; width:100%; margin-bottom: 5px;" : "color:#fff; border-bottom:1px solid #555; padding-bottom:5px; font-size:18px;";
-            let finalIcon = isFinals ? "🏆 " : "";
-            html += `<h3 style="${titleStyle}">${finalIcon}${titleLabel}</h3>`;
+            html += `<h3 style="${titleStyle}">${titleLabel}</h3>`;
             
             let cols = isFinals ? 1 : 5;
             let ths = "";
@@ -864,7 +907,7 @@
                 html += buildGridHTML(dayRecords, getStageInfo(81).title, true);
                 html += `</div>`;
             } else {
-                html += `<div class="tables-grid">`;
+                html += `<div>`;
                 for (let i = 0; i < dayRecords.length; i += 5) {
                     const chunk = dayRecords.slice(i, i + 5);
                     html += buildGridHTML(chunk, getStageInfo(chunk[0].match_id).shortTitle, false);
@@ -924,7 +967,7 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
 
-        // --- 純字串注入截圖引擎 (保證100%不報錯) ---
+        // --- 純字串注入截圖引擎 (保證100%不報錯，無視螢幕大小) ---
         function generateImageFromHTMLString(htmlContent, filename, isSummary = false) {
             document.getElementById('export_loading').style.display = 'flex';
 
@@ -932,7 +975,8 @@
             sandbox.style.position = 'absolute';
             sandbox.style.top = '-99999px';
             sandbox.style.left = '0';
-            sandbox.style.width = isSummary ? '1600px' : '1100px'; 
+            // 超大畫布確保名字絕對不會換行
+            sandbox.style.width = isSummary ? '1920px' : '1100px'; 
             sandbox.style.backgroundColor = '#1a1a24';
             sandbox.style.color = '#f5f5f5';
             sandbox.style.padding = '40px';
@@ -945,7 +989,8 @@
                 html2canvas(sandbox, {
                     backgroundColor: "#1a1a24",
                     scale: 1.5,
-                    useCORS: true
+                    useCORS: true,
+                    windowWidth: isSummary ? 1920 : 1100
                 }).then(canvas => {
                     document.body.removeChild(sandbox);
                     document.getElementById('export_loading').style.display = 'none';
@@ -979,7 +1024,7 @@
             const htmlContent = `
                 <div style="min-width: 1000px;">
                     <div class="summary-header" style="text-align:center; margin-bottom:30px; border-bottom:2px dashed #444; padding-bottom:20px;">
-                        <h1 style="color:#2196F3; font-size:42px; margin:0 0 10px 0;">📊 賽馬娘 冠軍集會 - ${dayTitle}</h1>
+                        <h1 style="color:#2196F3; font-size:42px; margin:0 0 10px 0;">賽馬娘 冠軍集會 - ${dayTitle}</h1>
                     </div>
                     <div style="background-color: #252530; border-radius: 12px; padding: 20px; border-top: 5px solid #2196F3;">
                         ${container.innerHTML}
@@ -997,7 +1042,7 @@
             let html = `
                 <div style="min-width: 1200px;">
                     <div class="summary-header" style="text-align:center; margin-bottom:30px; border-bottom:2px dashed #444; padding-bottom:20px;">
-                        <h1 style="color:#ffeb3b; font-size:42px; margin:0 0 10px 0;">🏆 賽馬娘 冠軍集會 最終戰績總結 🏆</h1>
+                        <h1 style="color:#ffeb3b; font-size:42px; margin:0 0 10px 0;">賽馬娘 冠軍集會 最終戰績總結</h1>
                         <h2 id="summary_overall_stats" style="color:#4CAF50; font-size: 28px;"></h2>
                     </div>
                     <div class="summary-grid-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
@@ -1021,7 +1066,7 @@
                     html += `<p style="text-align:center; color:#888; font-size:18px;">無紀錄</p>`;
                 } else {
                     html += generateDayStatsHTML(dayRecords, false, "");
-                    // 改為垂直排列單一欄 (修復截圖被擠壓的問題)
+                    // 全部改為垂直排列單一欄 (解決長寬被擠壓的問題)
                     html += `<div style="display:flex; flex-direction:column; gap:10px;">`;
                     for (let i = 0; i < dayRecords.length; i += 5) {
                         const chunk = dayRecords.slice(i, i + 5);
@@ -1033,7 +1078,7 @@
             }
             
             html += `</div><div class="summary-finals-block" style="display: flex; flex-direction: column; align-items: center;">
-                        <h2 style="color:#FF9800; text-align:center; border-bottom:1px solid #555; padding-bottom:10px; width: 100%;">🏆 決賽 🏆</h2>`;
+                        <h2 style="color:#FF9800; text-align:center; border-bottom:1px solid #555; padding-bottom:10px; width: 100%;">決賽</h2>`;
             const finalsRecord = records.filter(r => r.match_id === 81);
             if (finalsRecord.length === 0) {
                 html += `<p style="text-align:center; color:#888; font-size:18px;">無紀錄或未晉級</p>`;
@@ -1070,13 +1115,13 @@
                     navigator.clipboard.write([
                         new ClipboardItem({ 'image/png': blob })
                     ]).then(() => {
-                        alert('✅ 圖片已成功複製到剪貼簿！可以直接貼上 (Ctrl+V) 分享了。');
+                        alert('圖片已成功複製到剪貼簿！可以直接貼上 (Ctrl+V) 分享了。');
                     }).catch(err => {
-                        alert('⚠️ 您的瀏覽器不允許網頁直接寫入剪貼簿，請點擊上方按鈕下載圖片。');
+                        alert('您的瀏覽器不允許網頁直接寫入剪貼簿，請點擊上方按鈕下載圖片。');
                     });
                 });
             } catch (e) {
-                alert('⚠️ 您的瀏覽器環境不支援此功能，請使用下載按鈕。');
+                alert('您的瀏覽器環境不支援此功能，請使用下載按鈕。');
             }
         }
 
