@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>賽馬娘冠軍集會紀錄器 專業圖鑑版</title>
-    <!-- 引入 html2canvas 截圖套件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { 
@@ -22,17 +21,16 @@
         body::before {
             content: "";
             position: fixed;
-            top: -50px; left: -50px; right: -50px; bottom: -50px; /* 往外推避免邊緣模糊白邊 */
+            top: -50px; left: -50px; right: -50px; bottom: -50px; 
             background-image: url('5週年.jpg');
             background-size: cover;
             background-position: center;
-            filter: blur(25px) brightness(0.4); /* 超級霧化並調暗 */
+            filter: blur(25px) brightness(0.4); 
             z-index: -1;
         }
 
         .main-container { display: flex; gap: 20px; align-items: stretch; flex-wrap: wrap; }
         
-        /* 面板加上微透明與毛玻璃效果，讓背景隱約透出 */
         .panel { 
             background-color: rgba(37, 37, 48, 0.85); 
             backdrop-filter: blur(10px);
@@ -48,7 +46,6 @@
         
         .win-rate-panel { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
         
-        /* 勝率面板維持垂直置中 */
         .rate-box { 
             flex: 1; min-width: 200px; background: rgba(50, 50, 64, 0.9); 
             border-left: 5px solid #FF9800; padding: 25px 15px; 
@@ -154,7 +151,7 @@
 
         .daily-stat-card {
             display: flex; flex-direction: row; align-items: center;
-            background: #2a2a35; padding: 10px 15px; border-radius: 8px; border: 1px solid #555;
+            background: #2a2a35; padding: 10px 20px; border-radius: 8px; border: 1px solid #555;
             gap: 15px; flex: 1; min-width: 200px; box-sizing: border-box;
         }
         .daily-stat-avatar {
@@ -213,7 +210,6 @@
     </div>
 
     <div class="main-container">
-        <!-- 左半部面板 -->
         <div class="panel left-panel">
             <div id="stage_display" class="stage-title">載入中...</div>
             <label>出賽陣容與名次點選</label>
@@ -259,7 +255,6 @@
             </div>
         </div>
 
-        <!-- 右半部面板 -->
         <div class="panel right-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px;">
                 <h2 style="margin: 0; border: none; padding: 0;">當前輪次戰況</h2>
@@ -288,7 +283,6 @@
         </div>
     </div>
 
-    <!-- 頭像選擇 -->
     <div id="avatar_modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 850px;">
             <button class="close-modal" onclick="closeModal('avatar_modal')">&times;</button>
@@ -298,7 +292,6 @@
         </div>
     </div>
 
-    <!-- 進階戰績 -->
     <div id="stats_modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 900px;">
             <button class="close-modal" onclick="closeModal('stats_modal')">&times;</button>
@@ -310,7 +303,6 @@
         </div>
     </div>
 
-    <!-- 歷史明細 -->
     <div id="history_modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal" onclick="closeModal('history_modal')">&times;</button>
@@ -318,31 +310,26 @@
                 <h2 style="border:none; margin: 0;">歷史戰績</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button onclick="exportCurrentHistory()" style="background-color: #2196F3; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">產生【本頁戰績】圖片</button>
-                    <button onclick="exportFinalSummary()" style="background-color: #FF9800; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">產生【最終總結報表】</button>
+                    <button onclick="previewFinalSummary()" style="background-color: #FF9800; font-size: 14px; padding: 8px 12px; width: auto; margin: 0;">產生【最終總結報表】</button>
                 </div>
             </div>
             <div class="history-tabs-container" id="history_tabs"></div>
-            
             <div id="history_table_container" style="background-color: #252530; border-radius: 8px; padding: 10px;"></div>
         </div>
     </div>
 
-    <!-- 最終總結報表預覽 -->
     <div id="summary_preview_modal" class="modal-overlay" style="z-index: 150;">
         <div class="modal-content" style="max-width: 1250px;">
             <button class="close-modal" onclick="closeModal('summary_preview_modal')">&times;</button>
             <div style="text-align: right; margin-bottom: 10px; padding-right: 60px;">
                 <p style="color: #aaa; font-size: 14px; margin: 0 0 10px 0; text-align: center;">報表已產生！您現在可以使用系統截圖 (Win+Shift+S / Cmd+Shift+4) 截下整個畫面。</p>
-                <button onclick="exportSummaryToImage()" style="background-color: #2196F3; width: auto; padding: 8px 15px; font-size: 14px;">嘗試直接由系統生成長圖 (若失敗請手動截圖)</button>
+                <button onclick="exportSummaryToImage()" style="background-color: #2196F3; width: auto; padding: 8px 15px; font-size: 14px;">嘗試由系統擷取與下載圖片 (若失敗請手動截圖)</button>
             </div>
-            
             <div id="summary_preview_area" style="background-color: #1a1a24; padding: 30px; border-radius: 12px; border: 2px dashed #4CAF50; overflow-x: auto;">
-                <!-- 報表內容動態生成於此 -->
-            </div>
+                </div>
         </div>
     </div>
 
-    <!-- 截圖結果預覽與下載 -->
     <div id="export_modal" class="modal-overlay" style="z-index: 200;">
         <div class="modal-content" style="max-width: 90%; text-align: center;">
             <button class="close-modal" onclick="closeModal('export_modal')">&times;</button>
@@ -360,14 +347,9 @@
         </div>
     </div>
 
-    <!-- 載入中遮罩 -->
     <div id="export_loading" class="modal-overlay" style="z-index: 300; flex-direction: column; color: white; font-size: 24px; font-weight: bold;">
         正在為您繪製高畫質圖片，請稍候...
     </div>
-
-    <!-- 隱藏的截圖專用容器 -->
-    <div id="daily_export_area" style="display: none;"></div>
-    <div id="summary_export_area" style="display: none;"></div>
 
     <script>
         const AVAILABLE_IMAGES = [
@@ -396,7 +378,7 @@
             "重砲.jpg", "島川喬登(夏日).jpg", "島川喬登(萬聖節).jpg", "島川喬登.jpg", "時代創世.jpg", "氣槽(花嫁).jpg", "氣槽.jpg",
             "浮岩光王.jpg", "特別週(泳裝).jpg", "特別週(總大將).jpg", "特別週.jpg", "真機伶(花嫁).jpg", "真機伶.jpg", "神鷹(幻想).jpg",
             "神鷹.jpg", "草上飛(幻想).jpg", "草上飛(新年).jpg", "草上飛.jpg", "荒漠英雄(秋).jpg", "荒漠英雄.jpg", "迷人景緻.jpg",
-            "高尚駿逸(泳裝).jpg", "高尚駿逸.png", "唯獨愛你(育馬者盃).jpg", "唯獨愛你.jpg", "採珠(萬聖節).jpg", "採珠.jpg",
+            "高尚駿逸(泳裝).jpg", "高尚駿逸.png", "唯獨愛濃(育馬者盃).jpg", "唯獨愛你.jpg", "採珠(萬聖節).jpg", "採珠.jpg",
             "曼哈頓咖啡(情人節).png", "曼哈頓咖啡.jpg", "第一紅寶(禮服).png", "第一紅寶.jpg", "雪之美人(情人節).png", "雪之美人.jpg",
             "凱旋芭蕾.jpg", "創升(溫泉).jpg", "創升.png", "勝利奬券(UAF).png", "勝利奬券(蒸汽龐克).jpg", "勝利奬券.jpg",
             "喜嘉奇蹟(秋).jpg", "喜嘉奇蹟.jpg", "富士奇石(啦啦隊).jpg", "富士奇石(禮服).jpg", "富士奇石.jpg", "無需理由.jpg",
@@ -907,7 +889,6 @@
                 html += buildGridHTML(dayRecords, getStageInfo(81).title, true);
                 html += `</div>`;
             } else {
-                // 這裡補回 tables-grid，讓當日戰績恢復 2x2 的網格排列
                 html += `<div class="tables-grid">`;
                 for (let i = 0; i < dayRecords.length; i += 5) {
                     const chunk = dayRecords.slice(i, i + 5);
@@ -968,13 +949,13 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
 
-        // --- 純字串注入截圖引擎 (保證100%不報錯，無視螢幕大小) ---
-        // --- 純字串注入截圖引擎 (保證100%不報錯，無視螢幕大小) ---
+        // --- 純字串注入截圖引擎 (強固無敵版) ---
         function generateImageFromHTMLString(htmlContent, filename, isSummary = false) {
             document.getElementById('export_loading').style.display = 'flex';
+            window.scrollTo(0, 0); 
 
             const sandbox = document.createElement('div');
-            // 改用 fixed 並設為透明，這樣能留在瀏覽器運算範圍內，又絕對不會干擾你的畫面
+            // 改用 fixed 但層級在遮罩之下，保證瀏覽器不會因為它在外面而罷工
             sandbox.style.position = 'fixed';
             sandbox.style.top = '0';
             sandbox.style.left = '0';
@@ -982,14 +963,11 @@
             sandbox.style.backgroundColor = '#1a1a24';
             sandbox.style.color = '#f5f5f5';
             sandbox.style.padding = '40px';
-            sandbox.style.zIndex = '-1000';
-            sandbox.style.opacity = '0';
-            sandbox.style.pointerEvents = 'none';
+            sandbox.style.zIndex = '250'; // 躲在 z-index 300 的黑底白字載入畫面後面
             
             sandbox.innerHTML = htmlContent;
             document.body.appendChild(sandbox);
 
-            // 稍微加長等待時間到 800 毫秒，確保超級長的總結報表算圖完成
             setTimeout(() => {
                 html2canvas(sandbox, {
                     backgroundColor: "#1a1a24",
@@ -1011,10 +989,11 @@
                 }).catch(err => {
                     if (document.body.contains(sandbox)) document.body.removeChild(sandbox);
                     document.getElementById('export_loading').style.display = 'none';
-                    alert("產生圖片失敗！");
+                    alert("產生圖片失敗！\n錯誤: " + err);
                 });
             }, 800); 
         }
+
         function exportCurrentHistory() {
             const container = document.getElementById('history_table_container');
             if (!container || container.innerText.includes("這一天還沒有戰績喔！") || container.innerHTML.trim() === "") {
@@ -1043,7 +1022,7 @@
             
             const summaryContainer = document.getElementById('summary_preview_area');
             let html = `
-                <div style="min-width: 1200px;">
+                <div style="min-width: 1050px;">
                     <div class="summary-header" style="text-align:center; margin-bottom:30px; border-bottom:2px dashed #444; padding-bottom:20px;">
                         <h1 style="color:#ffeb3b; font-size:42px; margin:0 0 10px 0;">賽馬娘 冠軍集會 最終戰績總結</h1>
                         <h2 id="summary_overall_stats" style="color:#4CAF50; font-size: 28px;"></h2>
@@ -1069,7 +1048,6 @@
                     html += `<p style="text-align:center; color:#888; font-size:18px;">無紀錄</p>`;
                 } else {
                     html += generateDayStatsHTML(dayRecords, false, "");
-                    // 這裡強制改為 flex-direction: column，確保在總結報表裡全部往下單排，不擠壓空間
                     html += `<div style="display:flex; flex-direction:column; gap:10px; width:100%;">`;
                     for (let i = 0; i < dayRecords.length; i += 5) {
                         const chunk = dayRecords.slice(i, i + 5);
