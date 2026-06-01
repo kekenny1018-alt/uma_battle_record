@@ -998,7 +998,7 @@
             const htmlContent = `
                 <div style="min-width: 1000px;">
                     <div class="summary-header" style="text-align:center; margin-bottom:30px; border-bottom:2px dashed #444; padding-bottom:20px;">
-                        <h1 style="color:#2196F3; font-size:42px; margin:0 0 10px 0;">賽馬娘 ${tName} - ${dayTitle}</h1>
+                        <h1 style="color:#2196F3; font-size:42px; margin:0 0 10px 0;">${tName} - ${dayTitle}</h1>
                     </div>
                     <div style="background-color: #252530; border-radius: 12px; padding: 20px; border-top: 5px solid #2196F3;">
                         ${container.innerHTML}
@@ -1006,7 +1006,7 @@
                 </div>
             `;
             
-            generateImageFromHTMLString(htmlContent, `賽馬娘_${tName}_${dayTitle}_${new Date().toISOString().slice(0,10)}.png`, false);
+            generateImageFromHTMLString(htmlContent, `${tName}_${dayTitle}_${new Date().toISOString().slice(0,10)}.png`, false);
         }
 
         function previewFinalSummary() {
@@ -1018,7 +1018,7 @@
             let html = `
                 <div style="min-width: 1200px;">
                     <div class="summary-header" style="text-align:center; margin-bottom:30px; border-bottom:2px dashed #444; padding-bottom:20px;">
-                        <h1 style="color:#ffeb3b; font-size:42px; margin:0 0 10px 0;">賽馬娘 ${tName} 戰績總結</h1>
+                        <h1 style="color:#ffeb3b; font-size:42px; margin:0 0 10px 0;">${tName} 戰績總結</h1>
                         <h2 id="summary_overall_stats" style="color:#4CAF50; font-size: 28px;"></h2>
                     </div>
                     <div class="summary-grid-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
@@ -1079,7 +1079,7 @@
             const sourceElement = document.getElementById('summary_preview_area');
             if (!sourceElement) return;
             const tName = document.getElementById('tournament_name').value.trim() || '冠軍集會';
-            generateImageFromHTMLString(sourceElement.innerHTML, `賽馬娘_${tName}_戰績總結_${new Date().toISOString().slice(0,10)}.png`, true);
+            generateImageFromHTMLString(sourceElement.innerHTML, `${tName}_戰績總結_${new Date().toISOString().slice(0,10)}.png`, true);
         }
 
         function copyImageToClipboard() {
