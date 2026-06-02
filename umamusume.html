@@ -943,22 +943,27 @@
         window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
 
         // --- 純字串注入截圖引擎 (保證100%不報錯) ---
+        // --- 純字串注入截圖引擎 (保證100%不報錯，解決新圖片卡死問題) ---
         function generateImageFromHTMLString(htmlContent, filename, isSummary = false) {
             document.getElementById('export_loading').style.display = 'flex';
 
             const sandbox = document.createElement('div');
-            sandbox.style.position = 'absolute';
-            sandbox.style.top = '-99999px';
+            // 改用 fixed 並設為透明，保證在瀏覽器算圖範圍內，迫使瀏覽器載入新圖片
+            sandbox.style.position = 'fixed';
+            sandbox.style.top = '0';
             sandbox.style.left = '0';
             sandbox.style.width = isSummary ? '1600px' : '1100px'; 
             sandbox.style.backgroundColor = '#1a1a24';
             sandbox.style.color = '#f5f5f5';
             sandbox.style.padding = '40px';
             sandbox.style.zIndex = '-1000';
+            sandbox.style.opacity = '0'; 
+            sandbox.style.pointerEvents = 'none';
             
             sandbox.innerHTML = htmlContent;
             document.body.appendChild(sandbox);
 
+            // 稍微加長等待時間到 800 毫秒，讓新加的圖片有時間下載完成
             setTimeout(() => {
                 html2canvas(sandbox, {
                     backgroundColor: "#1a1a24",
@@ -982,9 +987,8 @@
                     document.getElementById('export_loading').style.display = 'none';
                     alert("產生圖片失敗！");
                 });
-            }, 600); 
+            }, 800); 
         }
-
         function exportCurrentHistory() {
             const container = document.getElementById('history_table_container');
             if (!container || container.innerText.includes("這一天還沒有戰績喔！") || container.innerHTML.trim() === "") {
