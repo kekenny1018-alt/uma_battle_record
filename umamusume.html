@@ -944,19 +944,23 @@
 
         // --- 純字串注入截圖引擎 (保證100%不報錯) ---
         // --- 純字串注入截圖引擎 (拿掉透明度，回歸最穩定版) ---
+        // --- 純字串注入截圖引擎 (終極防卡死版) ---
         function generateImageFromHTMLString(htmlContent, filename, isSummary = false) {
             document.getElementById('export_loading').style.display = 'flex';
+            
+            // 確保捲軸在最上面，避免截圖出現奇怪的裁切
+            window.scrollTo(0, 0); 
 
             const sandbox = document.createElement('div');
-            // 放回畫面外的深淵，並且絕對不加 opacity: 0
-            sandbox.style.position = 'absolute';
-            sandbox.style.top = '-99999px';
+            // 關鍵：用 fixed 留在可視範圍強迫瀏覽器讀圖，用 z-index: -1000 藏在你的背景底下
+            sandbox.style.position = 'fixed';
+            sandbox.style.top = '0';
             sandbox.style.left = '0';
-            sandbox.style.width = isSummary ? '1600px' : '1100px'; 
+            sandbox.style.width = isSummary ? '1400px' : '1100px'; 
             sandbox.style.backgroundColor = '#1a1a24';
             sandbox.style.color = '#f5f5f5';
             sandbox.style.padding = '40px';
-            sandbox.style.zIndex = '-1000';
+            sandbox.style.zIndex = '-1000'; 
             
             sandbox.innerHTML = htmlContent;
             document.body.appendChild(sandbox);
@@ -965,7 +969,9 @@
                 html2canvas(sandbox, {
                     backgroundColor: "#1a1a24",
                     scale: 1.5,
-                    useCORS: true
+                    useCORS: true,
+                    // 【特效藥】：如果遇到檔名打錯的圖片，最多等 3 秒就會強制略過並截圖，絕對不會無限卡死！
+                    imageTimeout: 3000 
                 }).then(canvas => {
                     document.body.removeChild(sandbox);
                     document.getElementById('export_loading').style.display = 'none';
@@ -982,9 +988,9 @@
                 }).catch(err => {
                     if (document.body.contains(sandbox)) document.body.removeChild(sandbox);
                     document.getElementById('export_loading').style.display = 'none';
-                    alert("產生圖片失敗！");
+                    alert("產生圖片失敗！請檢查是否有圖片檔名輸入錯誤。\n詳細錯誤: " + err);
                 });
-            }, 600); 
+            }, 800); // 給新圖片 0.8 秒的緩衝下載時間
         }
         
         function exportCurrentHistory() {
