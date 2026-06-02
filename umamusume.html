@@ -608,7 +608,7 @@
                 
                 if (horse && horse.isDebuff) {
                     nameEl.style.color = '#aaa'; nameEl.innerHTML = formatName(horse.name);
-                    group.innerHTML = `<div style="color:#aaa; padding:15px 0; font-size: 16px; font-weight:bold;">戰術支援中</div>`;
+                    group.innerHTML = `<div style="color:#aaa; padding:15px 0; font-size: 16px; font-weight:bold;">領域展開中</div>`;
                 } else {
                     nameEl.style.color = '#f5f5f5'; nameEl.innerHTML = formatName(horse.name);
                     group.innerHTML = Array.from({length: 9}, (_, i) => i+1).map(i => 
@@ -921,7 +921,7 @@
             
             if (isDebuff) {
                 let teamWins = playedMatches.filter(r => r.lineup.some(l => !l.isDebuff && l.rank === 1)).length;
-                html += `<div class="stat-box debuff" style="grid-column: span 4;"><div>出場時團隊勝率 (輔助價值)</div><div class="stat-val">${((teamWins/total)*100).toFixed(1)}%</div><div style="font-size:14px; color:#aaa;">團隊勝 ${teamWins} / 總出場 ${total}</div></div>`;
+                html += `<div class="stat-box debuff" style="grid-column: span 4;"><div>出場時團隊勝率</div><div class="stat-val">${((teamWins/total)*100).toFixed(1)}%</div><div style="font-size:14px; color:#aaa;">團隊勝 ${teamWins} / 總出場 ${total}</div></div>`;
             } else {
                 let wins = 0, top2 = 0, top3 = 0, recent5 = [];
                 playedMatches.forEach(r => {
