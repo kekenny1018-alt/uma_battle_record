@@ -180,7 +180,8 @@
 
             <div class="score-input-area">
                 <label>本張票獲得總分：</label>
-                <input type="number" id="ticket_score" min="0" max="1000" placeholder="0 ~ 1000">
+                <!-- 加入 onkeypress 監聽 Enter 鍵 -->
+                <input type="number" id="ticket_score" min="0" max="1000" placeholder="0 ~ 1000" onkeypress="if(event.key === 'Enter') addRecord()">
             </div>
 
             <input type="text" id="memo" placeholder="備註 (選填)">
@@ -521,24 +522,42 @@
         function buildLOHListHTML(chunkArray) {
             if (chunkArray.length === 0) return "<p style='color:#888'>尚無紀錄。</p>";
             
-            let html = `<div class="loh-ticket-list">`;
-            chunkArray.forEach(r => {
-                let teamHtml = r.lineup.map(h => {
-                    const imgSrc = h.image !== "unknown.jpg" ? `img/${h.image}` : "img/unknown.jpg";
-                    return `<img src="${imgSrc}" title="${h.name}" onerror="this.src='img/unknown.jpg'; this.style.backgroundColor='#222'">`;
-                }).join('');
-                
-                let memoHtml = r.memo ? `<div class="loh-ticket-memo" title="${r.memo}">${r.memo}</div>` : "";
-
-                html += `
-                <div class="loh-ticket-card">
-                    <div class="loh-ticket-id">票 ${r.match_id}</div>
-                    <div class="loh-ticket-team">${teamHtml}</div>
-                    ${memoHtml}
-                    <div class="loh-ticket-score">+${r.score}</div>
-                </div>`;
+            // 取得最新一場的陣容頭像 (LOH 通常不換馬，抓最後一場當代表即可)
+            const latestLineup = chunkArray[chunkArray.length - 1].lineup;
+            let avatarsHtml = `<div style="display: flex; justify-content: center; gap: 25px; margin-bottom: 20px;">`;
+            latestLineup.forEach(h => {
+                const imgSrc = h.image !== "unknown.jpg" ? `img/${h.image}` : "img/unknown.jpg";
+                avatarsHtml += `<img src="${imgSrc}" title="${h.name}" style="width: 75px; height: 75px; border-radius: 12px; object-fit: cover; border: 3px solid #E91E63; background-color: #222; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">`;
             });
-            html += `</div>`;
+            avatarsHtml += `</div>`;
+
+            // 橫向表格結構 (固定 5 格)
+            let cols = 5;
+            let ths = "";
+            let scoreTds = "";
+            let memoTds = "";
+            const hasMemo = chunkArray.some(match => match.memo && match.memo.trim() !== "");
+
+            for(let j=0; j<cols; j++) {
+                if (j < chunkArray.length) {
+                    const r = chunkArray[j];
+                    ths += `<th>票 ${r.match_id}</th>`;
+                    scoreTds += `<td style="font-size: 36px; font-weight: 900; color: #FFD700; padding: 15px 5px; font-family: 'Arial Black', Impact, sans-serif;">${r.score}</td>`;
+                    if (hasMemo) memoTds += `<td style="color: #aaa; font-size: 14px; padding: 8px; background-color: rgba(42, 42, 53, 0.9);">${r.memo || ""}</td>`;
+                } else {
+                    ths += `<th>-</th>`;
+                    scoreTds += `<td style="color: #555; font-size: 24px; padding: 15px 5px;">-</td>`;
+                    if (hasMemo) memoTds += `<td style="background-color: rgba(42, 42, 53, 0.9);"></td>`;
+                }
+            }
+
+            let html = avatarsHtml + `
+                <table class="grid-table" style="width: 100%; table-layout: fixed;">
+                    <tr>${ths}</tr>
+                    <tr>${scoreTds}</tr>
+                    ${hasMemo ? `<tr>${memoTds}</tr>` : ""}
+                </table>
+            `;
             return html;
         }
 
@@ -548,11 +567,11 @@
                 container.innerHTML = "<p style='color:#888'>尚無紀錄，請輸入您的第一張票分數。</p>";
                 return;
             }
-            // 抓取最後 5 筆紀錄顯示
-            const recentRecords = records.slice(-5).reverse(); // 反轉讓最新的在上面
+            // 抓取最後 5 筆紀錄顯示 (正序排列，讓表格由左至右為舊到新)
+            const recentRecords = records.slice(-5); 
             container.innerHTML = buildLOHListHTML(recentRecords);
         }
-
+        
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
 
