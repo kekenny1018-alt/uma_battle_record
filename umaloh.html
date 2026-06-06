@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>賽馬娘 LOH 戰績紀錄器</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -17,7 +18,7 @@
             position: relative;
         }
 
-        /* 滿版霧化背景設定 (共用 5週年.jpg) */
+        /* 滿版霧化背景設定 */
         body::before {
             content: "";
             position: fixed;
@@ -92,15 +93,11 @@
         .action-btns button { flex: 1; }
         .undo-btn { background-color: #757575; }
         .undo-btn:hover { background-color: #616161; }
-        
-        /* 戰況列表排版 */
-        .loh-ticket-list { display: flex; flex-direction: column; gap: 12px; }
-        .loh-ticket-card { background: #323240; border-radius: 8px; border-left: 5px solid #2196F3; padding: 15px; display: flex; align-items: center; gap: 15px; }
-        .loh-ticket-id { font-size: 20px; font-weight: bold; color: #2196F3; width: 80px; text-align: center; border-right: 1px solid #555; padding-right: 15px; }
-        .loh-ticket-team { display: flex; gap: 8px; flex: 1; }
-        .loh-ticket-team img { width: 50px; height: 50px; border-radius: 8px; border: 1px solid #777; object-fit: cover; }
-        .loh-ticket-score { font-size: 32px; font-weight: 900; color: #FFD700; font-family: 'Arial Black', sans-serif; width: 120px; text-align: right; }
-        .loh-ticket-memo { font-size: 14px; color: #aaa; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* LOH 專屬橫向戰況表樣式 */
+        .grid-table { width: 100%; border-collapse: collapse; background: rgba(50, 50, 64, 0.9); border-radius: 8px; overflow: hidden; table-layout: fixed; }
+        .grid-table th, .grid-table td { border: 1px solid #555; text-align: center; vertical-align: middle; word-wrap: break-word; }
+        .grid-table th { background-color: #2b2b36; color: #2196F3; font-size: 16px; padding: 10px 5px; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: #252530; padding: 25px; border-radius: 12px; width: 95%; max-width: 1050px; max-height: 85vh; overflow-y: auto; border: 1px solid #E91E63; position: relative; }
@@ -113,7 +110,10 @@
         .avatar-picker-wrapper:hover { border-color: #E91E63; transform: scale(1.05); }
         .avatar-picker-img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background-color: #555; }
         .avatar-picker-name { font-size: 13px; font-weight: bold; text-align: center; line-height: 1.2; color: #fff; }
-        
+
+        /* 圖表外框樣式 */
+        .chart-container { background-color: rgba(50, 50, 64, 0.9); padding: 15px; border-radius: 8px; border: 1px solid #555; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+
     </style>
 </head>
 <body>
@@ -180,7 +180,6 @@
 
             <div class="score-input-area">
                 <label>本張票獲得總分：</label>
-                <!-- 加入 onkeypress 監聽 Enter 鍵 -->
                 <input type="number" id="ticket_score" min="0" max="1000" placeholder="0 ~ 1000" onkeypress="if(event.key === 'Enter') addRecord()">
             </div>
 
@@ -194,10 +193,10 @@
 
         <div class="panel right-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px;">
-                <h2 style="margin: 0; border: none; padding: 0;">近 5 張票戰況</h2>
+                <h2 style="margin: 0; border: none; padding: 0;">近 5 張票戰況與總分走勢</h2>
             </div>
             
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
                 <div style="flex: 2; min-width: 350px;">
                     <div id="current_round_container"></div>
                 </div>
@@ -212,6 +211,11 @@
                     </div>
                 </div>
             </div>
+
+            <div class="chart-container">
+                <canvas id="scoreChart" style="width: 100%; max-height: 250px;"></canvas>
+            </div>
+
         </div>
     </div>
 
@@ -225,7 +229,6 @@
     </div>
 
     <script>
-        // 圖片庫與原來相同
         const AVAILABLE_IMAGES = [
             "unknown.jpg", "kiseki.jpg", "八重無敵(戰裝).png", "八重無敵.jpg", "丸善斯基(泳裝).jpg", "丸善斯基(新年).jpg",
             "丸善斯基.jpg", "千明代表(新年).jpg", "千明代表.jpg", "大和赤驥(聖誕節).jpg", "大和赤驥.jpg", "大鳴大放.png",
@@ -273,15 +276,10 @@
 
         let roster = JSON.parse(localStorage.getItem('uma_loh_roster')) || [];
         let records = JSON.parse(localStorage.getItem('uma_loh_records')) || [];
+        let scoreChart = null; // 全域變數儲存圖表
 
         function getBaseName(name) { return name.split('(')[0]; }
         function formatName(name) { return name.replace(/\((.*?)\)/g, '<br>$1'); }
-
-        function getHorseImg(name) {
-            const h = roster.find(r => r.name === name);
-            if (h && h.image && h.image !== "unknown.jpg") return `img/${h.image}`;
-            return "img/unknown.jpg"; 
-        }
 
         function initAvatarGrid() {
             const grid = document.getElementById('avatar_grid');
@@ -412,6 +410,7 @@
 
             updateScoreBoard();
             updateGridTable();
+            initOrUpdateChart();
         }
 
         function updateHorseSelectDisabledState() {
@@ -522,7 +521,6 @@
         function buildLOHListHTML(chunkArray) {
             if (chunkArray.length === 0) return "<p style='color:#888'>尚無紀錄。</p>";
             
-            // 取得最新一場的陣容頭像 (LOH 通常不換馬，抓最後一場當代表即可)
             const latestLineup = chunkArray[chunkArray.length - 1].lineup;
             let avatarsHtml = `<div style="display: flex; justify-content: center; gap: 25px; margin-bottom: 20px;">`;
             latestLineup.forEach(h => {
@@ -531,7 +529,6 @@
             });
             avatarsHtml += `</div>`;
 
-            // 橫向表格結構 (固定 5 格)
             let cols = 5;
             let ths = "";
             let scoreTds = "";
@@ -567,15 +564,94 @@
                 container.innerHTML = "<p style='color:#888'>尚無紀錄，請輸入您的第一張票分數。</p>";
                 return;
             }
-            // 抓取最後 5 筆紀錄顯示 (正序排列，讓表格由左至右為舊到新)
             const recentRecords = records.slice(-5); 
             container.innerHTML = buildLOHListHTML(recentRecords);
         }
-        
+
+        // --- 初始化或更新 Chart.js 折線圖 ---
+        function initOrUpdateChart() {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            
+            let dataPoints = [{x: 0, y: 4000}];
+            let currentScore = 4000;
+            for (let i = 0; i < records.length; i++) {
+                currentScore += records[i].score;
+                dataPoints.push({x: i + 1, y: currentScore});
+            }
+
+            if (scoreChart) {
+                scoreChart.data.datasets[0].data = dataPoints;
+                scoreChart.update();
+            } else {
+                scoreChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [{
+                            label: '累計分數走勢',
+                            data: dataPoints,
+                            borderColor: '#FFD700',
+                            backgroundColor: 'rgba(255, 215, 0, 0.2)',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#FFD700',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        return context[0].raw.x === 0 ? '初始分數' : '票 ' + context[0].raw.x;
+                                    },
+                                    label: function(context) {
+                                        return '分數: ' + context.raw.y;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                min: 0,
+                                max: 30,
+                                ticks: {
+                                    stepSize: 5,
+                                    color: '#aaa',
+                                    font: { size: 14 }
+                                },
+                                grid: { color: '#444' },
+                                title: {
+                                    display: true,
+                                    text: '消耗票數',
+                                    color: '#aaa',
+                                    font: { size: 12 }
+                                }
+                            },
+                            y: {
+                                min: 4000,
+                                max: 34000,
+                                ticks: {
+                                    color: '#aaa',
+                                    font: { size: 14 }
+                                },
+                                grid: { color: '#444' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
 
-        // 載入自訂賽事名稱
         const savedTName = localStorage.getItem('uma_loh_tournament');
         if (savedTName) {
             const tNameInput = document.getElementById('tournament_name');
