@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>賽馬娘 LOH 戰績紀錄器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            color: #f5f5f5; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            position: relative;
+        }
+
+        /* 滿版霧化背景設定 (共用 5週年.jpg) */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -50px; left: -50px; right: -50px; bottom: -50px; 
+            background-image: url('5週年.jpg');
+            background-size: cover;
+            background-position: center;
+            filter: blur(25px) brightness(0.4); 
+            z-index: -1;
+        }
+
+        .main-container { display: flex; gap: 20px; align-items: stretch; flex-wrap: wrap; }
+        
+        .panel { 
+            background-color: rgba(37, 37, 48, 0.85); 
+            backdrop-filter: blur(10px);
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+            box-sizing: border-box; 
+        }
+        
+        .left-panel { flex: 1; min-width: 400px; }
+        .right-panel { flex: 1.8; min-width: 500px; display: flex; flex-direction: column; }
+        h2, h3 { color: #E91E63; border-bottom: 1px solid #444; padding-bottom: 10px; margin-top: 0; }
+        
+        .win-rate-panel { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+        
+        .rate-box { 
+            flex: 1; min-width: 200px; background: rgba(50, 50, 64, 0.9); 
+            border-left: 5px solid #2196F3; padding: 25px 15px; 
+            border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+            display: flex; flex-direction: column; justify-content: center; 
+        }
+        .rate-box.total { border-left-color: #E91E63; }
+        .rate-label { font-size: 16px; color: #aaa; margin-bottom: 10px; font-weight: bold; }
+        .rate-value { font-size: 44px; font-weight: bold; color: #fff; line-height: 1.1; font-family: 'Arial Black', Impact, sans-serif; }
+
+        .stage-title { font-size: 22px; font-weight: bold; color: #ffeb3b; background: rgba(51, 51, 51, 0.9); padding: 10px 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+        .lock-status { font-size: 14px; font-weight: normal; padding: 3px 8px; border-radius: 4px; margin-left: 10px; vertical-align: middle; }
+        .unlocked { background-color: #E91E63; color: white; }
+        .locked { background-color: #757575; color: white; }
+
+        input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: rgba(51, 51, 51, 0.9); color: white; box-sizing: border-box; font-size: 16px; }
+        input[disabled], select[disabled] { background-color: #444; color: #888; cursor: not-allowed; }
+        
+        .roster-setup { display: flex; gap: 15px; margin-bottom: 10px; align-items: flex-start; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; }
+        .preview-avatar-btn { width: 85px; height: 85px; border-radius: 8px; object-fit: cover; background-color: #444; cursor: pointer; border: 2px solid #555; transition: 0.2s; flex-shrink: 0; }
+        .preview-avatar-btn:hover { border-color: #E91E63; transform: scale(1.05); }
+        
+        .roster-input-group { display: flex; flex: 1; gap: 10px; align-items: center; flex-wrap: nowrap; width: 100%; }
+        .roster-input-group input[type="text"] { flex: 1; min-width: 300px; max-width: 800px; font-size: 18px; padding: 10px; }
+        .roster-input-group button { white-space: nowrap; width: auto; flex-shrink: 0; padding: 10px 20px; font-size: 16px; }
+        
+        .roster-tag { background: #E91E63; padding: 5px 10px; border-radius: 15px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; margin: 0 5px 5px 0;}
+        .roster-tag img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+        .delete-btn { background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: 16px; font-weight: bold; }
+        
+        .horse-setup { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; background: rgba(50, 50, 64, 0.8); padding: 12px; border-radius: 8px; }
+        .horse-input-row { display: flex; flex-direction: row; align-items: center; gap: 15px; }
+        .input-display-area { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; flex: 1; }
+        .input-display-area img { width: 65px; height: 65px; border-radius: 8px; object-fit: cover; background-color: #222; flex-shrink: 0; border: 2px solid #E91E63;}
+        .input-display-area span { font-size: 18px; font-weight: bold; line-height: 1.3; white-space: nowrap; flex: 1; }
+
+        .score-input-area { background-color: rgba(233, 30, 99, 0.15); padding: 15px; border-radius: 8px; border-left: 5px solid #E91E63; display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .score-input-area label { font-size: 18px; font-weight: bold; color: #fff; white-space: nowrap; }
+        .score-input-area input { font-size: 24px; font-weight: bold; font-family: 'Arial Black', sans-serif; color: #FFD700; width: 150px; text-align: center; }
+
+        button { background-color: #E91E63; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { background-color: #c2185b; }
+        .action-btns { display: flex; gap: 10px; margin-top: 10px; }
+        .action-btns button { flex: 1; }
+        .undo-btn { background-color: #757575; }
+        .undo-btn:hover { background-color: #616161; }
+        
+        /* 戰況列表排版 */
+        .loh-ticket-list { display: flex; flex-direction: column; gap: 12px; }
+        .loh-ticket-card { background: #323240; border-radius: 8px; border-left: 5px solid #2196F3; padding: 15px; display: flex; align-items: center; gap: 15px; }
+        .loh-ticket-id { font-size: 20px; font-weight: bold; color: #2196F3; width: 80px; text-align: center; border-right: 1px solid #555; padding-right: 15px; }
+        .loh-ticket-team { display: flex; gap: 8px; flex: 1; }
+        .loh-ticket-team img { width: 50px; height: 50px; border-radius: 8px; border: 1px solid #777; object-fit: cover; }
+        .loh-ticket-score { font-size: 32px; font-weight: 900; color: #FFD700; font-family: 'Arial Black', sans-serif; width: 120px; text-align: right; }
+        .loh-ticket-memo { font-size: 14px; color: #aaa; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: #252530; padding: 25px; border-radius: 12px; width: 95%; max-width: 1050px; max-height: 85vh; overflow-y: auto; border: 1px solid #E91E63; position: relative; }
+        
+        .close-modal { position: absolute; right: 15px; top: 15px; background: rgba(0,0,0,0.5); color: #fff; font-size: 24px; cursor: pointer; padding: 0; z-index: 100; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #555; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .close-modal:hover { background: #e53935; border-color: #e53935; }
+
+        .avatar-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; max-height: 55vh; overflow-y: auto; padding-right: 5px; }
+        .avatar-picker-wrapper { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: 8px; border-radius: 8px; border: 2px solid transparent; transition: 0.2s; background: #323240; }
+        .avatar-picker-wrapper:hover { border-color: #E91E63; transform: scale(1.05); }
+        .avatar-picker-img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; background-color: #555; }
+        .avatar-picker-name { font-size: 13px; font-weight: bold; text-align: center; line-height: 1.2; color: #fff; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="panel" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <h2 style="margin: 0; border: none; padding: 0;">戰馬登錄</h2>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="font-weight: bold; color: #aaa; font-size: 16px; white-space: nowrap;">賽事名稱：</label>
+                <input type="text" id="tournament_name" value="LOH 英雄聯盟" placeholder="自訂賽事名稱" style="width: 200px;" onchange="saveData()">
+            </div>
+        </div>
+        <div class="roster-setup">
+            <img id="preview_avatar" class="preview-avatar-btn" src="img/unknown.jpg" onclick="openAvatarModal()" title="點擊選擇頭像" onerror="this.src=''; this.style.backgroundColor='#555'">
+            <input type="hidden" id="selected_filename" value="unknown.jpg">
+            <div style="flex: 1; display: flex; flex-direction: column;">
+                <div class="roster-input-group">
+                    <input type="text" id="new_horse_name" placeholder="點擊左側頭像選擇馬娘" onkeypress="if(event.key === 'Enter') addToRoster()">
+                    <button onclick="addToRoster()">登錄</button>
+                </div>
+                <div style="font-size: 13px; color: #aaa; margin-top: 8px; margin-left: 4px;">提示：可使用括弧( )做備註</div>
+            </div>
+        </div>
+        <div style="text-align: right; margin-bottom: 15px;">
+            <button onclick="clearAllData()" style="background-color: #f44336; padding: 5px 10px; font-size: 14px; width: auto;">格式化全部資料</button>
+        </div>
+        <div id="roster_display"></div>
+    </div>
+
+    <div class="main-container">
+        <div class="panel left-panel">
+            <div id="stage_display" class="stage-title">載入中...</div>
+            <label style="margin-bottom: 10px; display:block;">出賽陣容與分數記錄</label>
+            
+            <div class="horse-setup">
+                <select id="horse_a_select" onchange="onHorseChange('a')"></select>
+                <div class="horse-input-row" id="row_a" style="display:none;">
+                    <div class="input-display-area">
+                        <img id="slot_a_img" src="img/unknown.jpg" onerror="this.src=''; this.style.backgroundColor='#222'">
+                        <span id="slot_a_name"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="horse-setup">
+                <select id="horse_b_select" onchange="onHorseChange('b')"></select>
+                <div class="horse-input-row" id="row_b" style="display:none;">
+                    <div class="input-display-area">
+                        <img id="slot_b_img" src="img/unknown.jpg" onerror="this.src=''; this.style.backgroundColor='#222'">
+                        <span id="slot_b_name"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="horse-setup">
+                <select id="horse_c_select" onchange="onHorseChange('c')"></select>
+                <div class="horse-input-row" id="row_c" style="display:none;">
+                    <div class="input-display-area">
+                        <img id="slot_c_img" src="img/unknown.jpg" onerror="this.src=''; this.style.backgroundColor='#222'">
+                        <span id="slot_c_name"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="score-input-area">
+                <label>本張票獲得總分：</label>
+                <input type="number" id="ticket_score" min="0" max="1000" placeholder="0 ~ 1000">
+            </div>
+
+            <input type="text" id="memo" placeholder="備註 (選填)">
+            
+            <div class="action-btns">
+                <button onclick="addRecord()">儲存本場分數</button>
+                <button class="undo-btn" onclick="undoLastRecord()">回上一場</button>
+            </div>
+        </div>
+
+        <div class="panel right-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px;">
+                <h2 style="margin: 0; border: none; padding: 0;">近 5 張票戰況</h2>
+            </div>
+            
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 2; min-width: 350px;">
+                    <div id="current_round_container"></div>
+                </div>
+                <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 15px;">
+                    <div class="rate-box" style="border-left-color: #2196F3;">
+                        <div class="rate-label" id="today_label">今日獲得積分 (第1天)</div>
+                        <div class="rate-value" id="today_score">0</div>
+                    </div>
+                    <div class="rate-box total">
+                        <div class="rate-label">當前累計總分</div>
+                        <div class="rate-value" id="total_score" style="color: #ffeb3b;">4000</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="avatar_modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 850px;">
+            <button class="close-modal" onclick="closeModal('avatar_modal')">&times;</button>
+            <h2 style="border:none; margin-bottom: 15px; margin-top: 0;">選擇馬娘頭像</h2>
+            <input type="text" id="avatar_search" placeholder="輸入關鍵字搜尋馬娘..." onkeyup="filterAvatars()" style="margin-bottom: 15px; font-size: 16px;">
+            <div id="avatar_grid" class="avatar-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // 圖片庫與原來相同
+        const AVAILABLE_IMAGES = [
+            "unknown.jpg", "kiseki.jpg", "八重無敵(戰裝).png", "八重無敵.jpg", "丸善斯基(泳裝).jpg", "丸善斯基(新年).jpg",
+            "丸善斯基.jpg", "千明代表(新年).jpg", "千明代表.jpg", "大和赤驥(聖誕節).jpg", "大和赤驥.jpg", "大鳴大放.png",
+            "大德太陽(禮服).png", "大德太陽.jpg", "大樹快車(出遊).jpg", "大樹快車(情人節).jpg", "大樹快車.jpg", "小林歷奇(遊行).jpg",
+            "小林歷奇.jpg", "小栗帽(灰姑娘).jpg", "小栗帽(聖誕節).jpg", "小栗帽.jpg", "山人西風(情人節).jpg", "山人西風.jpg",
+            "川上公主(慶典).jpg", "川上公主.jpg", "中山慶典(聖誕節).jpg", "中山慶典.jpg", "天狼星象徵(換裝).jpg", "天狼星象徵.jpg",
+            "比布魯斯(泳裝).jpg", "比布魯斯.png", "比薩勝駒.jpg", "北方飛翔(禮服).jpg", "北方飛翔.png", "北幸樽前(夏日).jpg",
+            "北幸樽前.jpg", "北部玄駒(動畫).png", "北部玄駒(新年).jpg", "北部玄駒.jpg", "玉藻十字(慶典).jpg", "玉藻十字.jpg",
+            "生野狄杜斯(新年).jpg", "生野狄杜斯.png", "目白光明(聖誕節).png", "目白光明.jpg", "目白多伯(出遊).jpg", "目白多伯.jpg",
+            "目白拉茉奴(花嫁).jpg", "目白拉茉奴.jpg", "目白阿爾丹(禮服).jpg", "目白阿爾丹.jpg", "目白麥昆(泳裝).jpg", "目白麥昆(動畫).jpg",
+            "目白麥昆.jpg", "目白善信(聖誕節).png", "目白善信.jpg", "目白賴恩(情人節).jpg", "目白賴恩.jpg", "伏特加(聖誕節).jpg",
+            "伏特加.jpg", "名將怒濤(萬聖節).jpg", "名將怒濤.jpg", "好歌劇(新年).jpg", "好歌劇.jpg", "成田大進(蒸汽龐克).jpg",
+            "成田大進(機械).jpg", "成田大進.jpg", "成田白仁(餓狼).jpg", "成田白仁.jpg", "成田路(聖誕節).jpg", "成田路.jpg",
+            "米浴(大豐食祭).jpg", "米浴(萬聖節).jpg", "米浴.jpg", "艾尼斯風神(情人節).jpg", "艾尼斯風神(無人島).jpg", "艾尼斯風神.jpg",
+            "西野花(花嫁).jpg", "西野花.jpg", "西薩里奧(花嫁).jpg", "西薩里奧.jpg", "克莉斯耶絲象徵(萬聖節).jpg", "克莉斯耶絲象徵.jpg",
+            "希望城市.jpg", "杏目.jpg", "杜蘭達爾.jpg", "狂熱激昂.jpg", "谷水琴蕾(禮服).jpg", "谷水琴蕾.jpg", "里見光鑽(凱旋門).jpg",
+            "里見光鑽(新年).jpg", "里見光鑽.jpg", "里見皇冠(泳裝).jpg", "里見皇冠.png", "奇銳駿(溫泉).jpg", "奇銳駿.jpg",
+            "幸運歐丁香.jpg", "房一潘朵拉.jpg", "放聲歡呼.jpg", "東海帝皇(動畫).jpg", "東海帝皇(慶典).jpg", "東海帝皇.jpg",
+            "東商變革(花嫁).jpg", "東商變革.jpg", "泡泡糖小子(新年).jpg", "泡泡糖小子.jpg", "空中神宮(萬聖節).jpg", "空中神宮.jpg",
+            "空中彌賽亞.jpg", "青竹回憶(夏日).jpg", "青竹回憶.jpg", "青雲天空(禮服).jpg", "青雲天空.jpg", "信念.jpg", "勇敢之心.jpg",
+            "帝王光輝(花嫁).jpg", "帝王光輝(啦啦隊).jpg", "帝王光輝.jpg", "待兼唐懷瑟(體育節).jpg", "待兼唐懷瑟.jpg", "待兼福來(全副武裝).jpg",
+            "待兼福來.jpg", "春烏拉拉(新年).jpg", "春烏拉拉.jpg", "紅色夢想.jpg", "美妙姿勢(花嫁).jpg", "美妙姿勢.jpg",
+            "美浦波旁(情人節).jpg", "美浦波旁.jpg", "美麗週日(萬聖節).jpg", "美麗週日.jpg", "重砲(花嫁).jpg", "重砲(萬聖節).jpg",
+            "重砲.jpg", "島川喬登(夏日).jpg", "島川喬登(萬聖節).jpg", "島川喬登.jpg", "時代創世.jpg", "氣槽(花嫁).jpg", "氣槽.jpg",
+            "浮岩光王.jpg", "特別週(泳裝).jpg", "特別週(總大將).jpg", "特別週.jpg", "真機伶(花嫁).jpg", "真機伶.jpg", "神鷹(幻想).jpg",
+            "神鷹.jpg", "草上飛(幻想).jpg", "草上飛(新年).jpg", "草上飛.jpg", "荒漠英雄(秋).jpg", "荒漠英雄.jpg", "迷人景緻.jpg",
+            "高尚駿逸(泳裝).jpg", "高尚駿逸.png", "唯獨愛你(育馬者盃).jpg", "唯獨愛你.jpg", "採珠(萬聖節).jpg", "採珠.jpg",
+            "曼哈頓咖啡(情人節).png", "曼哈頓咖啡.jpg", "第一紅寶(禮服).png", "第一紅寶.jpg", "雪之美人(情人節).png", "雪之美人.jpg",
+            "凱旋芭蕾.jpg", "創升(溫泉).jpg", "創升.png", "勝利奬券(UAF).png", "勝利奬券(蒸汽龐克).jpg", "勝利奬券.jpg",
+            "喜嘉奇蹟(秋).jpg", "喜嘉奇蹟.jpg", "富士奇石(啦啦隊).jpg", "富士奇石(禮服).jpg", "富士奇石.jpg", "無需理由.jpg",
+            "無聲鈴鹿(泳裝).jpg", "無聲鈴鹿.jpg", "琵琶晨光(聖誕節).jpg", "琵琶晨光(機械).jpg", "琵琶晨光.jpg", "菱亞馬遜(花嫁).jpg",
+            "菱亞馬遜.jpg", "菱奇蹟(秋).jpg", "菱奇蹟.jpg", "菱曙(萬聖節).jpg", "菱曙.jpg", "萊茵實力(劇情).jpg", "萊茵實力.png",
+            "萊斯萊斯.jpg", "貴婦人.jpg", "超級小溪(萬聖節).jpg", "超級小溪(戰裝).png", "超級小溪.jpg", "超常駿驥.jpg", "黃金巨匠.jpg",
+            "黃金城市(無人島).jpg", "黃金城市(慶典).jpg", "黃金城市.jpg", "黃金旅程.jpg", "黃金船(泳裝).jpg", "黃金船(凱旋門).jpg",
+            "黃金船.jpg", "奧斯頓真弓(情人節).jpg", "奧斯頓真弓.jpg", "微光飛駒.png", "愛如往昔.jpg", "愛慕律動.jpg",
+            "愛慕織姬(聖誕節).jpg", "愛慕織姬.jpg", "愛麗速子(泳裝).jpg", "愛麗速子(實驗).png", "愛麗速子.jpg", "愛麗數碼(萬聖節).jpg",
+            "愛麗數碼.jpg", "新光風.jpg", "新宇宙(秋).jpg", "新宇宙.jpg", "極峰.jpg", "萬籟爭鳴(情人節).jpg", "萬籟爭鳴.png",
+            "葛城榮主(新年).jpg", "葛城榮主.jpg", "夢之旅(聖誕節).jpg", "夢之旅.png", "榮進閃耀(夏日).jpg", "榮進閃耀(情人節).jpg",
+            "榮進閃耀.jpg", "稻荷一(慶典).jpg", "稻荷一.jpg", "緞通烈焰.jpg", "踢踏城市(禮服).jpg", "踢踏城市.png",
+            "魯道夫象徵(慶典).jpg", "魯道夫象徵.jpg", "醒目飛鷹(華麗演唱會).jpg", "醒目飛鷹(遊行).jpg", "醒目飛鷹.jpg",
+            "優秀素質(啦啦隊).jpg", "優秀素質(新年).png", "優秀素質.jpg", "叢林口袋(啦啦隊).jpg", "叢林口袋.jpg", "雙渦輪.jpg",
+            "櫻花千代王(禮服).jpg", "櫻花千代王.jpg", "櫻花桂冠(新年).jpg", "櫻花桂冠.jpg", "櫻花驀進王(禮服).jpg",
+            "櫻花驀進王(體育節).jpg", "櫻花驀進王.jpg", "鶴丸強志.jpg"
+        ];
+
+        let roster = JSON.parse(localStorage.getItem('uma_loh_roster')) || [];
+        let records = JSON.parse(localStorage.getItem('uma_loh_records')) || [];
+
+        function getBaseName(name) { return name.split('(')[0]; }
+        function formatName(name) { return name.replace(/\((.*?)\)/g, '<br>$1'); }
+
+        function getHorseImg(name) {
+            const h = roster.find(r => r.name === name);
+            if (h && h.image && h.image !== "unknown.jpg") return `img/${h.image}`;
+            return "img/unknown.jpg"; 
+        }
+
+        function initAvatarGrid() {
+            const grid = document.getElementById('avatar_grid');
+            if (AVAILABLE_IMAGES.length === 0) return;
+            
+            grid.innerHTML = AVAILABLE_IMAGES.map(filename => {
+                const baseName = filename.split('.').slice(0, -1).join('.');
+                let isUnknown = filename === "unknown.jpg";
+                let displayName = isUnknown ? "請選擇" : formatName(baseName);
+                return `
+                <div class="avatar-picker-wrapper" data-name="${baseName}" data-is-unknown="${isUnknown}" onclick="selectAvatar('${filename}')">
+                    <img src="img/${filename}" class="avatar-picker-img" title="${baseName}" onerror="this.src=''; this.style.backgroundColor='#444'">
+                    <span class="avatar-picker-name">${displayName}</span>
+                </div>`;
+            }).join('');
+        }
+
+        function openAvatarModal() {
+            document.getElementById('avatar_modal').style.display = 'flex';
+            document.getElementById('avatar_search').value = '';
+            filterAvatars(); 
+            document.getElementById('avatar_search').focus();
+        }
+
+        function filterAvatars() {
+            const query = document.getElementById('avatar_search').value.toLowerCase();
+            const items = document.querySelectorAll('.avatar-picker-wrapper');
+            items.forEach(item => {
+                const name = item.getAttribute('data-name').toLowerCase();
+                if (name.includes(query) || item.getAttribute('data-is-unknown') === "true") item.style.display = 'flex';
+                else item.style.display = 'none';
+            });
+        }
+
+        function selectAvatar(filename) {
+            document.getElementById('preview_avatar').src = `img/${filename}`;
+            document.getElementById('selected_filename').value = filename;
+            if (filename !== "unknown.jpg") {
+                document.getElementById('new_horse_name').value = filename.split('.').slice(0, -1).join('.');
+            } else {
+                document.getElementById('new_horse_name').value = "";
+            }
+            closeModal('avatar_modal');
+        }
+
+        function addToRoster() {
+            let name = document.getElementById('new_horse_name').value.trim();
+            const imgFile = document.getElementById('selected_filename').value || "unknown.jpg";
+
+            if (imgFile === "unknown.jpg") return alert("請先點擊左側方塊選擇馬娘頭像！");
+            if (!name) return alert("請輸入馬娘暱稱！");
+            if (roster.find(h => h.name === name)) return alert("這隻馬娘的暱稱已在名冊內！(如需更換圖片請先刪除舊的)");
+            
+            roster.push({ name, image: imgFile });
+            
+            document.getElementById('new_horse_name').value = "";
+            document.getElementById('selected_filename').value = "unknown.jpg";
+            document.getElementById('preview_avatar').src = "img/unknown.jpg";
+            saveData(); updateAllUI();
+        }
+
+        function deleteFromRoster(name) {
+            if(confirm(`確定刪除「${name}」？戰績不會遺失，但無法再被選取。`)) {
+                roster = roster.filter(h => h.name !== name);
+                saveData(); updateAllUI();
+            }
+        }
+
+        function updateRosterUI() {
+            document.getElementById('roster_display').innerHTML = roster.map(h => {
+                const imgSrc = h.image ? `img/${h.image}` : 'img/unknown.jpg';
+                return `<span class="roster-tag">
+                            <img src="${imgSrc}" onerror="this.src=''; this.style.backgroundColor='#222'"> 
+                            <span style="display:inline-block; vertical-align:middle; text-align:center; line-height:1.2;">${formatName(h.name)}</span> 
+                            <button class="delete-btn" onclick="deleteFromRoster('${h.name}')">&times;</button>
+                        </span>`;
+            }).join('');
+        }
+
+        function saveData() {
+            localStorage.setItem('uma_loh_roster', JSON.stringify(roster));
+            localStorage.setItem('uma_loh_records', JSON.stringify(records));
+            const tName = document.getElementById('tournament_name');
+            if (tName) localStorage.setItem('uma_loh_tournament', tName.value);
+        }
+
+        function clearAllData() {
+            if(confirm("警告：這會清空所有的 LOH 馬娘與戰績，且無法復原！確定要重置嗎？")) {
+                localStorage.removeItem('uma_loh_roster');
+                localStorage.removeItem('uma_loh_records');
+                location.reload();
+            }
+        }
+
+        function getStageInfo(global_match) {
+            let isLocked = false;
+            let canPlay = true;
+            let title = "", shortTitle = "";
+
+            if (global_match <= 30) {
+                let day = Math.ceil(global_match / 5);
+                let match_in_day = (global_match - 1) % 5 + 1;
+                shortTitle = `第 ${day} 天`;
+                title = `賽程 ${shortTitle} (第 ${match_in_day} 張票)`;
+            } else {
+                shortTitle = title = "LOH 賽程已全部結束 (共 30 張票)";
+                canPlay = false; isLocked = true;
+            }
+            return { match: global_match, title, shortTitle, isLocked, canPlay, day: Math.ceil(global_match / 5) };
+        }
+
+        function updateAllUI() {
+            updateRosterUI();
+            updateDropdownOptions();
+            
+            const stage = getStageInfo(records.length + 1);
+            const lockTag = stage.isLocked ? `<span class="lock-status locked">鎖定</span>` : (stage.canPlay ? `<span class="lock-status unlocked">可換陣容</span>` : "");
+            document.getElementById('stage_display').innerHTML = `${stage.title} ${lockTag}`;
+
+            ['a', 'b', 'c'].forEach((slot, idx) => {
+                const select = document.getElementById(`horse_${slot}_select`);
+                select.disabled = stage.isLocked || !stage.canPlay;
+                if (stage.isLocked && records.length > 0) select.value = records[records.length - 1].lineup[idx].name;
+                onHorseChange(slot);
+            });
+            
+            document.getElementById('ticket_score').disabled = stage.isLocked || !stage.canPlay;
+
+            updateScoreBoard();
+            updateGridTable();
+        }
+
+        function updateHorseSelectDisabledState() {
+            const selectedNames = ['a', 'b', 'c'].map(s => document.getElementById(`horse_${s}_select`).value).filter(v => v);
+            ['a', 'b', 'c'].forEach(slot => {
+                const select = document.getElementById(`horse_${slot}_select`);
+                Array.from(select.options).forEach(opt => {
+                    if (!opt.value) { opt.disabled = false; return; }
+                    const optBase = getBaseName(opt.value);
+                    const isSelectedElsewhere = ['a', 'b', 'c'].some(otherSlot => {
+                        if (otherSlot === slot) return false;
+                        const otherVal = document.getElementById(`horse_${otherSlot}_select`).value;
+                        return otherVal && getBaseName(otherVal) === optBase;
+                    });
+                    opt.disabled = isSelectedElsewhere;
+                });
+            });
+        }
+
+        function updateDropdownOptions() {
+            ['a', 'b', 'c'].forEach(slot => {
+                const select = document.getElementById(`horse_${slot}_select`);
+                const val = select.value;
+                select.innerHTML = `<option value="">-- 請選擇出賽馬娘 --</option>` + roster.map(h => `<option value="${h.name}">${h.name}</option>`).join('');
+                if (roster.find(h => h.name === val)) select.value = val;
+            });
+            updateHorseSelectDisabledState();
+        }
+
+        function onHorseChange(slot) {
+            const name = document.getElementById(`horse_${slot}_select`).value;
+            const rowWrapper = document.getElementById(`row_${slot}`);
+            const imgEl = document.getElementById(`slot_${slot}_img`);
+            const nameEl = document.getElementById(`slot_${slot}_name`);
+            const stage = getStageInfo(records.length + 1);
+
+            if (!name || !stage.canPlay) { 
+                rowWrapper.style.display = "none";
+            } else {
+                const horse = roster.find(h => h.name === name);
+                rowWrapper.style.display = "flex"; imgEl.style.display = "block"; nameEl.style.display = "flex";
+                const imgSrc = horse.image && horse.image !== "unknown.jpg" ? `img/${horse.image}` : 'img/unknown.jpg';
+                imgEl.src = imgSrc;
+                nameEl.style.color = '#f5f5f5'; nameEl.innerHTML = formatName(horse.name);
+            }
+            updateHorseSelectDisabledState();
+        }
+
+        function addRecord() {
+            const stageInfo = getStageInfo(records.length + 1);
+            if (!stageInfo.canPlay) return alert("LOH 30 張票已全部打完！");
+            
+            const lineup = []; 
+            for (const slot of ['a', 'b', 'c']) {
+                const name = document.getElementById(`horse_${slot}_select`).value;
+                if (!name) return alert("陣容未填滿，請選擇三隻馬娘！");
+                const horse = roster.find(h => h.name === name) || {name, image: "unknown.jpg"};
+                lineup.push({ name, image: horse.image });
+            }
+
+            const baseNames = lineup.map(h => getBaseName(h.name));
+            if (new Set(baseNames).size !== baseNames.length) return alert("陣容衝突！不能同時派出同一位馬娘的不同換裝！");
+
+            const scoreInput = document.getElementById('ticket_score').value;
+            if (scoreInput === "" || scoreInput < 0 || scoreInput > 1000) return alert("請輸入正確的分數 (0 ~ 1000)。");
+
+            records.push({ 
+                match_id: stageInfo.match, 
+                day: stageInfo.day,
+                lineup, 
+                score: parseInt(scoreInput, 10),
+                memo: document.getElementById('memo').value 
+            });
+            
+            document.getElementById('ticket_score').value = "";
+            document.getElementById('memo').value = "";
+            saveData(); updateAllUI();
+        }
+
+        function undoLastRecord() {
+            if (records.length === 0) return alert("無紀錄可復原。");
+            if (confirm("確定刪除上一張票的紀錄嗎？")) {
+                records.pop();
+                saveData(); updateAllUI();
+            }
+        }
+
+        function updateScoreBoard() {
+            const baseScore = 4000;
+            let totalAddedScore = 0;
+            let currentDayScore = 0;
+            
+            let currentDay = records.length > 0 ? records[records.length - 1].day : 1;
+            if(records.length === 30) currentDay = 6;
+
+            records.forEach(r => {
+                totalAddedScore += r.score;
+                if (r.day === currentDay) {
+                    currentDayScore += r.score;
+                }
+            });
+
+            document.getElementById('today_label').innerText = `今日獲得積分 (第 ${currentDay} 天)`;
+            document.getElementById('today_score').innerText = currentDayScore;
+            document.getElementById('total_score').innerText = baseScore + totalAddedScore;
+        }
+
+        function buildLOHListHTML(chunkArray) {
+            if (chunkArray.length === 0) return "<p style='color:#888'>尚無紀錄。</p>";
+            
+            let html = `<div class="loh-ticket-list">`;
+            chunkArray.forEach(r => {
+                let teamHtml = r.lineup.map(h => {
+                    const imgSrc = h.image !== "unknown.jpg" ? `img/${h.image}` : "img/unknown.jpg";
+                    return `<img src="${imgSrc}" title="${h.name}" onerror="this.src='img/unknown.jpg'; this.style.backgroundColor='#222'">`;
+                }).join('');
+                
+                let memoHtml = r.memo ? `<div class="loh-ticket-memo" title="${r.memo}">${r.memo}</div>` : "";
+
+                html += `
+                <div class="loh-ticket-card">
+                    <div class="loh-ticket-id">票 ${r.match_id}</div>
+                    <div class="loh-ticket-team">${teamHtml}</div>
+                    ${memoHtml}
+                    <div class="loh-ticket-score">+${r.score}</div>
+                </div>`;
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        function updateGridTable() {
+            const container = document.getElementById('current_round_container');
+            if (records.length === 0) {
+                container.innerHTML = "<p style='color:#888'>尚無紀錄，請輸入您的第一張票分數。</p>";
+                return;
+            }
+            // 抓取最後 5 筆紀錄顯示
+            const recentRecords = records.slice(-5).reverse(); // 反轉讓最新的在上面
+            container.innerHTML = buildLOHListHTML(recentRecords);
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
+
+        // 載入自訂賽事名稱
+        const savedTName = localStorage.getItem('uma_loh_tournament');
+        if (savedTName) {
+            const tNameInput = document.getElementById('tournament_name');
+            if (tNameInput) tNameInput.value = savedTName;
+        }
+
+        initAvatarGrid();
+        updateAllUI();
+    </script>
+</body>
+</html>
