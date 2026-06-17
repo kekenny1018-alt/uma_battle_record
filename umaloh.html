@@ -113,7 +113,16 @@
 
         /* 圖表外框樣式 */
         .chart-container { background-color: rgba(50, 50, 64, 0.9); padding: 15px; border-radius: 8px; border: 1px solid #555; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-
+        
+        .horse-btn-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; justify-content: center; }
+        .horse-square-btn { width: 105px; height: 145px; background: #323240; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; padding: 10px 4px; transition: 0.2s; color: white; }
+        .horse-square-btn img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; margin-bottom: 8px; }
+        .horse-square-btn span { font-size: 15px; font-weight: bold; text-align: center; word-break: break-all; line-height: 1.2; }
+        .horse-square-btn:hover, .horse-square-btn.active { background: #4CAF50; border-color: #4CAF50; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px; }
+        .stat-box { background: #323240; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 3px solid #E91E63; }
+        .stat-val { font-size: 32px; font-weight: bold; margin: 10px 0; color: #FFD700; }
     </style>
 </head>
 <body>
@@ -216,6 +225,11 @@
                 <canvas id="scoreChart" style="width: 100%; max-height: 250px;"></canvas>
             </div>
 
+            <div style="display: flex; gap: 15px; margin-top: 30px; flex-wrap: wrap;">
+                <button style="background-color: #2196F3;" onclick="openStatsModal()">馬娘出場率與均分</button>
+                <button style="background-color: #4CAF50;" onclick="openHistoryModal()">歷史戰績明細</button>
+                <button style="background-color: #9C27B0;" onclick="previewLOHSummary()">產生戰績總結圖片</button>
+            </div>
         </div>
     </div>
 
@@ -227,53 +241,100 @@
             <div id="avatar_grid" class="avatar-grid"></div>
         </div>
     </div>
+    
+    <div id="stats_modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 900px;">
+            <button class="close-modal" onclick="closeModal('stats_modal')">&times;</button>
+            <h2 style="border:none; margin-top: 0;">馬娘個別出賽數據</h2>
+            <div id="stats_horse_selector" class="horse-btn-grid"></div>
+            <div id="stats_detail_container">
+                <p style="color:#aaa; text-align:center; font-size:16px;">請點選上方馬娘方塊查看戰績</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="history_modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 700px;">
+            <button class="close-modal" onclick="closeModal('history_modal')">&times;</button>
+            <h2 style="border:none; margin-bottom: 20px; margin-top: 0; color: #E91E63;">歷史戰績明細</h2>
+            <div id="history_list_container" style="max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+                </div>
+        </div>
+    </div>
+
+    <div id="summary_preview_modal" class="modal-overlay" style="z-index: 150;">
+        <div class="modal-content" style="max-width: 1250px;">
+            <button class="close-modal" onclick="closeModal('summary_preview_modal')">&times;</button>
+            <div style="text-align: right; margin-bottom: 10px; padding-right: 60px;">
+                <p style="color: #aaa; font-size: 14px; margin: 0 0 10px 0; text-align: center;">報表已產生！您現在可以使用系統截圖 (Win+Shift+S / Cmd+Shift+4) 截下整個畫面。</p>
+                <button onclick="exportSummaryToImage()" style="background-color: #2196F3; width: auto; padding: 8px 15px; font-size: 14px;">嘗試直接由系統生成長圖 (若失敗請手動截圖)</button>
+            </div>
+            <div id="summary_preview_area" style="background-color: #1a1a24; padding: 30px; border-radius: 12px; border: 2px dashed #E91E63; overflow-x: auto;">
+                </div>
+        </div>
+    </div>
+
+    <div id="export_modal" class="modal-overlay" style="z-index: 200;">
+        <div class="modal-content" style="max-width: 90%; text-align: center;">
+            <button class="close-modal" onclick="closeModal('export_modal')">&times;</button>
+            <h2 style="border:none; margin-top: 0;">圖片下載區</h2>
+            <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 15px;">
+                <a id="download_btn" href="#" download="image.png" style="text-decoration: none;">
+                    <button style="background-color: #2196F3; width: auto; padding: 10px 20px;">下載圖片</button>
+                </a>
+                <button onclick="copyImageToClipboard()" id="copy_btn" style="background-color: #4CAF50; width: auto; padding: 10px 20px;">複製圖片到剪貼簿</button>
+            </div>
+            <p style="color: #aaa; margin-bottom: 15px; font-size: 14px;">若無法下載，您可以直接對著下方圖片按「右鍵」選擇「另存圖片」或「複製圖片」。</p>
+            <div style="overflow: auto; max-height: 55vh; border: 2px dashed #555; border-radius: 8px; padding: 10px; background: #1a1a24;">
+                <img id="exported_image" style="max-width: 100%; display: block; margin: 0 auto; user-select: auto; pointer-events: auto;">
+            </div>
+        </div>
+    </div>
+
+    <div id="export_loading" class="modal-overlay" style="z-index: 300; flex-direction: column; color: white; font-size: 24px; font-weight: bold;">
+        正在為您繪製高畫質圖片，請稍候...
+    </div>
 
     <script>
         // ==========================================
         // 自動化抓取圖片引擎
         // ==========================================
-        
-        // 【設定區】請填入你的 GitHub 資訊
-        const GITHUB_OWNER = 'kekenny1018-alt';  // 例如：'JohnDoe'
-        const GITHUB_REPO = 'uma_battle_record';   // 例如：'umamusume-tool'
+        const GITHUB_OWNER = 'kekenny1018-alt';
+        const GITHUB_REPO = 'uma_battle_record';
 
-        // 預設先放一張未知頭像，避免抓取失敗時沒圖可用
         let AVAILABLE_IMAGES = ["unknown.jpg"];
 
         async function autoLoadImages() {
             try {
-                // 透過 GitHub API 自動抓取 img 資料夾內的檔案列表
                 const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/img`);
-                if (!response.ok) throw new Error('API 請求失敗，請確認帳號/Repo名稱是否正確，以及 Repo 是否為公開狀態。');
-                
+                if (!response.ok) throw new Error('API 請求失敗');
                 const data = await response.json();
                 
-                // 過濾出 .jpg 和 .png 的檔案，並取出檔名
                 const fetchedImages = data
                     .filter(file => file.type === 'file' && file.name.match(/\.(jpg|jpeg|png)$/i))
                     .map(file => file.name);
 
-                // 確保 unknown.jpg 永遠排在第一個，後面接上抓回來的所有圖片
                 AVAILABLE_IMAGES = ["unknown.jpg", ...fetchedImages.filter(n => n !== "unknown.jpg")];
-
-                // 圖片清單更新完畢，重新渲染九宮格
                 initAvatarGrid();
             } catch (error) {
                 console.error("自動抓取圖片失敗:", error);
-                // 失敗時退回只顯示一張預設圖，避免網頁崩潰
                 initAvatarGrid();
             }
         }
 
-        // 網頁載入時立刻啟動自動抓取引擎
         autoLoadImages();
 
         let roster = JSON.parse(localStorage.getItem('uma_loh_roster')) || [];
         let records = JSON.parse(localStorage.getItem('uma_loh_records')) || [];
-        let scoreChart = null; // 全域變數儲存圖表
+        let scoreChart = null;
 
         function getBaseName(name) { return name.split('(')[0]; }
         function formatName(name) { return name.replace(/\((.*?)\)/g, '<br>$1'); }
+        function getHorseImg(name) {
+            const h = roster.find(r => r.name === name);
+            if (h && h.image && h.image !== "unknown.jpg") return `img/${h.image}`;
+            return "img/unknown.jpg"; 
+        }
 
         function initAvatarGrid() {
             const grid = document.getElementById('avatar_grid');
@@ -390,7 +451,8 @@
             updateDropdownOptions();
             
             const stage = getStageInfo(records.length + 1);
-            const lockTag = stage.isLocked ? `<span class="lock-status locked">鎖定</span>` : "");
+            // 移除了可換陣容的提示
+            const lockTag = stage.isLocked ? `<span class="lock-status locked">鎖定</span>` : "";
             document.getElementById('stage_display').innerHTML = `${stage.title} ${lockTag}`;
 
             ['a', 'b', 'c'].forEach((slot, idx) => {
@@ -405,6 +467,11 @@
             updateScoreBoard();
             updateGridTable();
             initOrUpdateChart();
+
+            // 如果歷史紀錄面板開著就重新渲染
+            if(document.getElementById('history_modal').style.display === 'flex') {
+                openHistoryModal();
+            }
         }
 
         function updateHorseSelectDisabledState() {
@@ -585,7 +652,7 @@
                         datasets: [{
                             label: '單張票分數',
                             data: dataPoints,
-                            backgroundColor: 'rgba(255, 215, 0, 0.7)', // 黃色半透明
+                            backgroundColor: 'rgba(255, 215, 0, 0.7)', 
                             borderColor: '#FFD700',
                             borderWidth: 1,
                             borderRadius: 4
@@ -595,7 +662,7 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false }, // 隱藏圖例讓畫面乾淨
+                            legend: { display: false },
                             tooltip: {
                                 callbacks: {
                                     label: function(context) { return ' 分數: ' + context.raw; }
@@ -605,11 +672,11 @@
                         scales: {
                             x: {
                                 ticks: { color: '#aaa' },
-                                grid: { display: false } // 隱藏垂直網格線
+                                grid: { display: false } 
                             },
                             y: {
                                 min: 0,
-                                max: 1000, // 每張票滿分固定為 1000
+                                max: 1000, 
                                 ticks: { color: '#aaa', font: { size: 14 } },
                                 grid: { color: '#444' }
                             }
@@ -619,20 +686,39 @@
             }
         }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
-
-        const savedTName = localStorage.getItem('uma_loh_tournament');
-        if (savedTName) {
-            const tNameInput = document.getElementById('tournament_name');
-            if (tNameInput) tNameInput.value = savedTName;
+        // --- LOH 歷史戰績垂直明細 ---
+        function openHistoryModal() { 
+            const container = document.getElementById('history_list_container');
+            if (records.length === 0) {
+                container.innerHTML = "<p style='color:#888; text-align:center; font-size: 18px;'>尚無任何戰績紀錄。</p>";
+            } else {
+                let html = '<div style="display:flex; flex-direction:column; gap:12px;">';
+                [...records].reverse().forEach(r => {
+                    let teamHtml = r.lineup.map(h => {
+                        const imgSrc = h.image !== "unknown.jpg" ? `img/${h.image}` : "img/unknown.jpg";
+                        return `<img src="${imgSrc}" title="${h.name}" style="width:45px; height:45px; border-radius:8px; object-fit:cover; border:2px solid #E91E63; background-color: #222;">`;
+                    }).join('');
+                    
+                    html += `
+                    <div style="background:#323240; padding:15px; border-radius:8px; display:flex; align-items:center; gap:15px; border-left:5px solid #E91E63; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                        <div style="font-weight:bold; color:#E91E63; width:60px; font-size: 18px; text-align: center;">票 ${r.match_id}</div>
+                        <div style="display:flex; gap:8px; flex:1;">${teamHtml}</div>
+                        ${r.memo ? `<div style="color:#aaa; font-size:14px; flex:2;">📝 ${r.memo}</div>` : '<div style="flex:2;"></div>'}
+                        <div style="font-size:28px; font-weight:900; color:#FFD700; font-family:'Arial Black', sans-serif;">+${r.score}</div>
+                    </div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+            document.getElementById('history_modal').style.display = 'flex';
         }
-// --- 產生 LOH 總結報表預覽 ---
+
+        // --- 產生 LOH 總結報表預覽 ---
         function previewLOHSummary() {
             if (records.length === 0) return alert("目前完全沒有紀錄！");
             
             const summaryContainer = document.getElementById('summary_preview_area');
-            const tName = document.getElementById('tournament_name').value.trim() || 'LOH 英雄聯盟';
+            const tName = document.getElementById('tournament_name').value.trim() || 'LOH';
             
             const baseScore = 4000;
             const totalAddedScore = records.reduce((sum, r) => sum + r.score, 0);
@@ -697,11 +783,49 @@
             document.getElementById('summary_preview_modal').style.display = 'flex';
         }
 
+        // --- 馬娘勝率統計分析 ---
+        function openStatsModal() {
+            document.getElementById('stats_modal').style.display = 'flex';
+            const allNames = Array.from(new Set([...roster.map(h=>h.name), ...records.flatMap(r=>r.lineup.map(l=>l.name))]));
+            
+            document.getElementById('stats_horse_selector').innerHTML = allNames.map(n => {
+                const imgSrc = getHorseImg(n);
+                const imgHTML = `<img src="${imgSrc}" onerror="this.src='img/unknown.jpg'; this.style.backgroundColor='#222'">`;
+                return `<button class="horse-square-btn" id="btn_stat_${n}" onclick="renderStatsDetail('${n}')">
+                            ${imgHTML}
+                            <span>${formatName(n)}</span>
+                        </button>`;
+            }).join('');
+            document.getElementById('stats_detail_container').innerHTML = "<p style='color:#aaa; text-align:center; font-size:16px;'>請點選上方馬娘方塊查看戰績</p>";
+        }
+
+        function renderStatsDetail(name) {
+            document.querySelectorAll('.horse-square-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn_stat_${name}`).classList.add('active');
+
+            const container = document.getElementById('stats_detail_container');
+            const playedMatches = records.filter(r => r.lineup.some(l => l.name === name));
+            if (playedMatches.length === 0) { container.innerHTML = "<p style='text-align:center;'>無出賽紀錄。</p>"; return; }
+            const total = playedMatches.length;
+            
+            let totalPoints = 0;
+            playedMatches.forEach(r => {
+                totalPoints += r.score;
+            });
+            let avgScore = (totalPoints / total).toFixed(1);
+
+            let html = `<div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">`;
+            html += `<div class="stat-box"><div>出賽次數 (票數)</div><div class="stat-val">${total} 次</div><div style="font-size:14px; color:#aaa;">總佔比 ${((total/records.length)*100).toFixed(1)}%</div></div>`;
+            html += `<div class="stat-box"><div>出場時平均得分</div><div class="stat-val">${avgScore} 分</div><div style="font-size:14px; color:#aaa;">總貢獻 ${totalPoints} 分</div></div>`;
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
         // --- 總結報表下載按鈕綁定 ---
         function exportSummaryToImage() {
             const sourceElement = document.getElementById('summary_preview_area');
             if (!sourceElement) return;
-            const tName = document.getElementById('tournament_name').value.trim() || 'LOH 英雄聯盟';
+            const tName = document.getElementById('tournament_name').value.trim() || 'LOH';
             generateImageFromHTMLString(sourceElement.innerHTML, `${tName}_戰績總結_${new Date().toISOString().slice(0,10)}.png`, true);
         }
 
@@ -750,8 +874,35 @@
                 });
             }, 800); 
         }
-        initAvatarGrid();
-        updateAllUI();
+
+        function copyImageToClipboard() {
+            const img = document.getElementById('exported_image');
+            try {
+                fetch(img.src)
+                .then(res => res.blob())
+                .then(blob => {
+                    navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]).then(() => {
+                        alert('圖片已成功複製到剪貼簿！可以直接貼上 (Ctrl+V) 分享了。');
+                    }).catch(err => {
+                        alert('您的瀏覽器不允許網頁直接寫入剪貼簿，請點擊上方按鈕下載圖片。');
+                    });
+                });
+            } catch (e) {
+                alert('您的瀏覽器環境不支援此功能，請使用下載按鈕。');
+            }
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        window.onclick = function(e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
+
+        const savedTName = localStorage.getItem('uma_loh_tournament');
+        if (savedTName) {
+            const tNameInput = document.getElementById('tournament_name');
+            if (tNameInput) tNameInput.value = savedTName;
+        }
+        
     </script>
 </body>
 </html>
