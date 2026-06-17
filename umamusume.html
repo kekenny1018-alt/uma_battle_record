@@ -339,50 +339,44 @@
     <div id="summary_export_area" style="display: none;"></div>
 
     <script>
-        const AVAILABLE_IMAGES = [
-            "unknown.jpg", "kiseki.jpg", "八重無敵(戰裝).png", "八重無敵.jpg", "丸善斯基(泳裝).jpg", "丸善斯基(新年).jpg",
-            "丸善斯基.jpg", "千明代表(新年).jpg", "千明代表.jpg", "大和赤驥(聖誕節).jpg", "大和赤驥.jpg", "大鳴大放.png",
-            "大德太陽(禮服).png", "大德太陽.jpg", "大樹快車(出遊).jpg", "大樹快車(情人節).jpg", "大樹快車.jpg", "小林歷奇(遊行).jpg",
-            "小林歷奇.jpg", "小栗帽(灰姑娘).jpg", "小栗帽(聖誕節).jpg", "小栗帽.jpg", "山人西風(情人節).jpg", "山人西風.jpg",
-            "川上公主(慶典).jpg", "川上公主.jpg", "中山慶典(聖誕節).jpg", "中山慶典.jpg", "天狼星象徵(換裝).jpg", "天狼星象徵.jpg",
-            "比布魯斯(泳裝).jpg", "比布魯斯.png", "比薩勝駒.jpg", "北方飛翔(禮服).jpg", "北方飛翔.png", "北幸樽前(夏日).jpg",
-            "北幸樽前.jpg", "北部玄駒(動畫).png", "北部玄駒(新年).jpg", "北部玄駒.jpg", "玉藻十字(慶典).jpg", "玉藻十字.jpg",
-            "生野狄杜斯(新年).jpg", "生野狄杜斯.png", "目白光明(聖誕節).png", "目白光明.jpg", "目白多伯(出遊).jpg", "目白多伯.jpg",
-            "目白拉茉奴(花嫁).jpg", "目白拉茉奴.jpg", "目白阿爾丹(禮服).jpg", "目白阿爾丹.jpg", "目白麥昆(泳裝).jpg", "目白麥昆(動畫).jpg",
-            "目白麥昆.jpg", "目白善信(聖誕節).png", "目白善信.jpg", "目白賴恩(情人節).jpg", "目白賴恩.jpg", "伏特加(聖誕節).jpg",
-            "伏特加.jpg", "名將怒濤(萬聖節).jpg", "名將怒濤.jpg", "好歌劇(新年).jpg", "好歌劇.jpg", "成田大進(蒸汽龐克).jpg",
-            "成田大進(機械).jpg", "成田大進.jpg", "成田白仁(餓狼).jpg", "成田白仁.jpg", "成田路(聖誕節).jpg", "成田路.jpg",
-            "米浴(大豐食祭).jpg", "米浴(萬聖節).jpg", "米浴.jpg", "艾尼斯風神(情人節).jpg", "艾尼斯風神(無人島).jpg", "艾尼斯風神.jpg",
-            "西野花(花嫁).jpg", "西野花.jpg", "西薩里奧(花嫁).jpg", "西薩里奧.jpg", "克莉斯耶絲象徵(萬聖節).jpg", "克莉斯耶絲象徵.jpg",
-            "希望城市.jpg", "杏目.jpg", "杜蘭達爾.jpg", "狂熱激昂.jpg", "谷水琴蕾(禮服).jpg", "谷水琴蕾.jpg", "里見光鑽(凱旋門).jpg",
-            "里見光鑽(新年).jpg", "里見光鑽.jpg", "里見皇冠(泳裝).jpg", "里見皇冠.png", "奇銳駿(溫泉).jpg", "奇銳駿.jpg",
-            "幸運歐丁香.jpg", "房一潘朵拉.jpg", "放聲歡呼.jpg", "東海帝皇(動畫).jpg", "東海帝皇(慶典).jpg", "東海帝皇.jpg",
-            "東商變革(花嫁).jpg", "東商變革.jpg", "泡泡糖小子(新年).jpg", "泡泡糖小子.jpg", "空中神宮(萬聖節).jpg", "空中神宮.jpg",
-            "空中彌賽亞.jpg", "青竹回憶(夏日).jpg", "青竹回憶.jpg", "青雲天空(禮服).jpg", "青雲天空.jpg", "信念.jpg", "勇敢之心.jpg",
-            "帝王光輝(花嫁).jpg", "帝王光輝(啦啦隊).jpg", "帝王光輝.jpg", "待兼唐懷瑟(體育節).jpg", "待兼唐懷瑟.jpg", "待兼福來(全副武裝).jpg",
-            "待兼福來.jpg", "春烏拉拉(新年).jpg", "春烏拉拉.jpg", "紅色夢想.jpg", "美妙姿勢(花嫁).jpg", "美妙姿勢.jpg",
-            "美浦波旁(情人節).jpg", "美浦波旁.jpg", "美麗週日(萬聖節).jpg", "美麗週日.jpg", "重砲(花嫁).jpg", "重砲(萬聖節).jpg",
-            "重砲.jpg", "島川喬登(夏日).jpg", "島川喬登(萬聖節).jpg", "島川喬登.jpg", "時代創世.jpg", "氣槽(花嫁).jpg", "氣槽.jpg",
-            "浮岩光王.jpg", "特別週(泳裝).jpg", "特別週(總大將).jpg", "特別週.jpg", "真機伶(花嫁).jpg", "真機伶.jpg", "神鷹(幻想).jpg",
-            "神鷹.jpg", "草上飛(幻想).jpg", "草上飛(新年).jpg", "草上飛.jpg", "荒漠英雄(秋).jpg", "荒漠英雄.jpg", "迷人景緻.jpg",
-            "高尚駿逸(泳裝).jpg", "高尚駿逸.png", "唯獨愛你(育馬者盃).jpg", "唯獨愛你.jpg", "採珠(萬聖節).jpg", "採珠.jpg",
-            "曼哈頓咖啡(花嫁).jpg","曼哈頓咖啡(情人節).png", "曼哈頓咖啡.jpg", "第一紅寶(禮服).png", "第一紅寶.jpg", "雪之美人(情人節).png", "雪之美人.jpg",
-            "凱旋芭蕾.jpg", "創升(溫泉).jpg", "創升.png", "勝利奬券(UAF).png", "勝利奬券(蒸汽龐克).jpg", "勝利奬券.jpg",
-            "喜嘉奇蹟(秋).jpg", "喜嘉奇蹟.jpg", "富士奇石(啦啦隊).jpg", "富士奇石(禮服).jpg", "富士奇石.jpg", "無需理由.jpg",
-            "無聲鈴鹿(泳裝).jpg", "無聲鈴鹿.jpg", "琵琶晨光(聖誕節).jpg", "琵琶晨光(機械).jpg", "琵琶晨光.jpg", "菱亞馬遜(花嫁).jpg",
-            "菱亞馬遜.jpg", "菱奇蹟(秋).jpg", "菱奇蹟.jpg", "菱曙(萬聖節).jpg", "菱曙.jpg", "萊茵實力(劇情).jpg", "萊茵實力.png",
-            "萊斯萊斯.jpg", "貴婦人(花嫁).jpg", "貴婦人.jpg", "超級小溪(萬聖節).jpg", "超級小溪(戰裝).png", "超級小溪.jpg", "超常駿驥.jpg", "黃金巨匠.jpg",
-            "黃金城市(無人島).jpg", "黃金城市(慶典).jpg", "黃金城市.jpg", "黃金旅程.jpg", "黃金船(泳裝).jpg", "黃金船(凱旋門).jpg",
-            "黃金船.jpg", "奧斯頓真弓(情人節).jpg", "奧斯頓真弓.jpg", "微光飛駒.png", "愛如往昔.jpg", "愛慕律動.jpg",
-            "愛慕織姬(聖誕節).jpg", "愛慕織姬.jpg", "愛麗速子(泳裝).jpg", "愛麗速子(實驗).png", "愛麗速子.jpg", "愛麗數碼(萬聖節).jpg",
-            "愛麗數碼.jpg", "新光風.jpg", "新宇宙(秋).jpg", "新宇宙.jpg", "極峰.jpg", "萬籟爭鳴(情人節).jpg", "萬籟爭鳴.png",
-            "葛城榮主(新年).jpg", "葛城榮主.jpg", "夢之旅(聖誕節).jpg", "夢之旅.png", "榮進閃耀(夏日).jpg", "榮進閃耀(情人節).jpg",
-            "榮進閃耀.jpg", "稻荷一(慶典).jpg", "稻荷一.jpg", "緞通烈焰.jpg", "踢踏城市(禮服).jpg", "踢踏城市.png",
-            "魯道夫象徵(慶典).jpg", "魯道夫象徵.jpg", "醒目飛鷹(華麗演唱會).jpg", "醒目飛鷹(遊行).jpg", "醒目飛鷹.jpg",
-            "優秀素質(啦啦隊).jpg", "優秀素質(新年).png", "優秀素質.jpg", "叢林口袋(啦啦隊).jpg", "叢林口袋.jpg", "雙渦輪.jpg",
-            "櫻花千代王(禮服).jpg", "櫻花千代王.jpg", "櫻花桂冠(新年).jpg", "櫻花桂冠.jpg", "櫻花驀進王(禮服).jpg",
-            "櫻花驀進王(體育節).jpg", "櫻花驀進王.jpg", "鶴丸強志.jpg"
-        ];
+        // ==========================================
+        // 自動化抓取圖片引擎
+        // ==========================================
+        
+        // 【設定區】請填入你的 GitHub 資訊
+        const GITHUB_OWNER = 'kekenny1018-alt';  // 例如：'JohnDoe'
+        const GITHUB_REPO = 'uma_battle_record';   // 例如：'umamusume-tool'
+
+        // 預設先放一張未知頭像，避免抓取失敗時沒圖可用
+        let AVAILABLE_IMAGES = ["unknown.jpg"];
+
+        async function autoLoadImages() {
+            try {
+                // 透過 GitHub API 自動抓取 img 資料夾內的檔案列表
+                const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/img`);
+                if (!response.ok) throw new Error('API 請求失敗，請確認帳號/Repo名稱是否正確，以及 Repo 是否為公開狀態。');
+                
+                const data = await response.json();
+                
+                // 過濾出 .jpg 和 .png 的檔案，並取出檔名
+                const fetchedImages = data
+                    .filter(file => file.type === 'file' && file.name.match(/\.(jpg|jpeg|png)$/i))
+                    .map(file => file.name);
+
+                // 確保 unknown.jpg 永遠排在第一個，後面接上抓回來的所有圖片
+                AVAILABLE_IMAGES = ["unknown.jpg", ...fetchedImages.filter(n => n !== "unknown.jpg")];
+
+                // 圖片清單更新完畢，重新渲染九宮格
+                initAvatarGrid();
+            } catch (error) {
+                console.error("自動抓取圖片失敗:", error);
+                // 失敗時退回只顯示一張預設圖，避免網頁崩潰
+                initAvatarGrid();
+            }
+        }
+
+        // 網頁載入時立刻啟動自動抓取引擎
+        autoLoadImages();
 
         let roster = JSON.parse(localStorage.getItem('uma_roster')) || [];
         let records = JSON.parse(localStorage.getItem('uma_records')) || [];
