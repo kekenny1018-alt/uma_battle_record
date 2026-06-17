@@ -123,7 +123,7 @@
             <h2 style="margin: 0; border: none; padding: 0;">戰馬登錄</h2>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <label style="font-weight: bold; color: #aaa; font-size: 16px; white-space: nowrap;">賽事名稱：</label>
-                <input type="text" id="tournament_name" value="LOH 英雄聯盟" placeholder="自訂賽事名稱" style="width: 200px;" onchange="saveData()">
+                <input type="text" id="tournament_name" value="LOH" placeholder="自訂賽事名稱" style="width: 200px;" onchange="saveData()">
             </div>
         </div>
         <div class="roster-setup">
@@ -390,7 +390,7 @@
             updateDropdownOptions();
             
             const stage = getStageInfo(records.length + 1);
-            const lockTag = stage.isLocked ? `<span class="lock-status locked">鎖定</span>` : (stage.canPlay ? `<span class="lock-status unlocked">可換陣容</span>` : "");
+            const lockTag = stage.isLocked ? `<span class="lock-status locked">鎖定</span>` : "");
             document.getElementById('stage_display').innerHTML = `${stage.title} ${lockTag}`;
 
             ['a', 'b', 'c'].forEach((slot, idx) => {
@@ -562,79 +562,55 @@
             container.innerHTML = buildLOHListHTML(recentRecords);
         }
 
-        // --- 初始化或更新 Chart.js 折線圖 ---
+        // --- 初始化或更新 Chart.js 圖表 (改為長條圖) ---
         function initOrUpdateChart() {
             const ctx = document.getElementById('scoreChart').getContext('2d');
             
-            let dataPoints = [{x: 0, y: 4000}];
-            let currentScore = 4000;
+            let labels = [];
+            let dataPoints = [];
             for (let i = 0; i < records.length; i++) {
-                currentScore += records[i].score;
-                dataPoints.push({x: i + 1, y: currentScore});
+                labels.push('票 ' + (i + 1));
+                dataPoints.push(records[i].score);
             }
 
             if (scoreChart) {
+                scoreChart.data.labels = labels;
                 scoreChart.data.datasets[0].data = dataPoints;
                 scoreChart.update();
             } else {
                 scoreChart = new Chart(ctx, {
-                    type: 'line',
+                    type: 'bar', // 正式改為長條圖
                     data: {
+                        labels: labels,
                         datasets: [{
-                            label: '累計分數走勢',
+                            label: '單張票分數',
                             data: dataPoints,
+                            backgroundColor: 'rgba(255, 215, 0, 0.7)', // 黃色半透明
                             borderColor: '#FFD700',
-                            backgroundColor: 'rgba(255, 215, 0, 0.2)',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#fff',
-                            pointBorderColor: '#FFD700',
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            fill: true,
-                            tension: 0.1
+                            borderWidth: 1,
+                            borderRadius: 4
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false },
+                            legend: { display: false }, // 隱藏圖例讓畫面乾淨
                             tooltip: {
                                 callbacks: {
-                                    title: function(context) {
-                                        return context[0].raw.x === 0 ? '初始分數' : '票 ' + context[0].raw.x;
-                                    },
-                                    label: function(context) {
-                                        return '分數: ' + context.raw.y;
-                                    }
+                                    label: function(context) { return ' 分數: ' + context.raw; }
                                 }
                             }
                         },
                         scales: {
                             x: {
-                                type: 'linear',
-                                min: 0,
-                                max: 30,
-                                ticks: {
-                                    stepSize: 5,
-                                    color: '#aaa',
-                                    font: { size: 14 }
-                                },
-                                grid: { color: '#444' },
-                                title: {
-                                    display: true,
-                                    text: '消耗票數',
-                                    color: '#aaa',
-                                    font: { size: 12 }
-                                }
+                                ticks: { color: '#aaa' },
+                                grid: { display: false } // 隱藏垂直網格線
                             },
                             y: {
-                                min: 4000,
-                                max: 34000,
-                                ticks: {
-                                    color: '#aaa',
-                                    font: { size: 14 }
-                                },
+                                min: 0,
+                                max: 1000, // 每張票滿分固定為 1000
+                                ticks: { color: '#aaa', font: { size: 14 } },
                                 grid: { color: '#444' }
                             }
                         }
@@ -651,7 +627,129 @@
             const tNameInput = document.getElementById('tournament_name');
             if (tNameInput) tNameInput.value = savedTName;
         }
+// --- 產生 LOH 總結報表預覽 ---
+        function previewLOHSummary() {
+            if (records.length === 0) return alert("目前完全沒有紀錄！");
+            
+            const summaryContainer = document.getElementById('summary_preview_area');
+            const tName = document.getElementById('tournament_name').value.trim() || 'LOH 英雄聯盟';
+            
+            const baseScore = 4000;
+            const totalAddedScore = records.reduce((sum, r) => sum + r.score, 0);
+            const finalScore = baseScore + totalAddedScore;
 
+            let html = `
+                <div style="min-width: 1150px;">
+                    <div style="text-align:center; margin-bottom:30px; border-bottom:2px dashed #444; padding-bottom:20px;">
+                        <h1 style="color:#ffeb3b; font-size:42px; margin:0 0 10px 0;">${tName} 戰績總結</h1>
+                        <h2 style="color:#4CAF50; font-size: 28px; margin:0;">最終累計總分: ${finalScore} pt</h2>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+            `;
+            
+            // LOH 固定 6 天，每天 5 張票
+            for (let day = 1; day <= 6; day++) {
+                const startIdx = (day - 1) * 5;
+                const chunk = records.slice(startIdx, startIdx + 5);
+                
+                // 如果這一天還沒打，就直接跳過不顯示
+                if (chunk.length === 0 && day > Math.ceil(records.length / 5)) continue; 
+
+                let ths = "";
+                let teamTds = "";
+                let scoreTds = "";
+
+                for (let j = 0; j < 5; j++) {
+                    const globalMatchId = startIdx + j + 1;
+                    ths += `<th>票 ${globalMatchId}</th>`;
+                    
+                    if (j < chunk.length) {
+                        const r = chunk[j];
+                        let avatarsHtml = `<div style="display:flex; justify-content:center; gap:8px;">`;
+                        r.lineup.forEach(h => {
+                            const imgSrc = h.image !== "unknown.jpg" ? `img/${h.image}` : "img/unknown.jpg";
+                            avatarsHtml += `<img src="${imgSrc}" style="width:50px; height:50px; border-radius:8px; object-fit:cover; border:2px solid #E91E63; background:#222;">`;
+                        });
+                        avatarsHtml += `</div>`;
+                        
+                        teamTds += `<td style="padding:15px 10px;">${avatarsHtml}</td>`;
+                        scoreTds += `<td style="font-size:36px; font-weight:900; color:#FFD700; font-family:'Arial Black', sans-serif;">+${r.score}</td>`;
+                    } else {
+                        teamTds += `<td style="padding:15px 10px; color:#555;">-</td>`;
+                        scoreTds += `<td style="font-size:24px; color:#555;">-</td>`;
+                    }
+                }
+
+                html += `
+                    <div style="background:rgba(50, 50, 64, 0.9); border-radius:12px; border-left:6px solid #2196F3; padding:20px; border: 1px solid #444;">
+                        <h3 style="color:#2196F3; margin-top:0; margin-bottom:15px; border:none; padding:0; font-size: 22px;">第 ${day} 天</h3>
+                        <table class="grid-table" style="width:100%; table-layout:fixed; border-collapse: collapse;">
+                            <tr>${ths}</tr>
+                            <tr>${teamTds}</tr>
+                            <tr>${scoreTds}</tr>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            html += `</div></div>`;
+            summaryContainer.innerHTML = html;
+            document.getElementById('summary_preview_modal').style.display = 'flex';
+        }
+
+        // --- 總結報表下載按鈕綁定 ---
+        function exportSummaryToImage() {
+            const sourceElement = document.getElementById('summary_preview_area');
+            if (!sourceElement) return;
+            const tName = document.getElementById('tournament_name').value.trim() || 'LOH 英雄聯盟';
+            generateImageFromHTMLString(sourceElement.innerHTML, `${tName}_戰績總結_${new Date().toISOString().slice(0,10)}.png`, true);
+        }
+
+        // --- 純字串注入截圖引擎 (確保 LOH 也能完美生圖) ---
+        function generateImageFromHTMLString(htmlContent, filename, isSummary = false) {
+            document.getElementById('export_loading').style.display = 'flex';
+            window.scrollTo(0, 0); 
+
+            const sandbox = document.createElement('div');
+            sandbox.style.position = 'fixed';
+            sandbox.style.top = '0';
+            sandbox.style.left = '0';
+            sandbox.style.width = isSummary ? '1250px' : '1100px'; 
+            sandbox.style.backgroundColor = '#1a1a24';
+            sandbox.style.color = '#f5f5f5';
+            sandbox.style.padding = '40px';
+            sandbox.style.zIndex = '-1000'; 
+            
+            sandbox.innerHTML = htmlContent;
+            document.body.appendChild(sandbox);
+
+            setTimeout(() => {
+                html2canvas(sandbox, {
+                    backgroundColor: "#1a1a24",
+                    scale: 1.5,
+                    useCORS: true,
+                    imageTimeout: 3000 // 防卡死機制
+                }).then(canvas => {
+                    document.body.removeChild(sandbox);
+                    document.getElementById('export_loading').style.display = 'none';
+
+                    const imgData = canvas.toDataURL("image/png");
+                    const expImg = document.getElementById('exported_image');
+                    expImg.src = imgData;
+
+                    const dlBtn = document.getElementById('download_btn');
+                    dlBtn.href = imgData;
+                    dlBtn.download = filename;
+
+                    document.getElementById('summary_preview_modal').style.display = 'none';
+                    document.getElementById('export_modal').style.display = 'flex';
+                }).catch(err => {
+                    if (document.body.contains(sandbox)) document.body.removeChild(sandbox);
+                    document.getElementById('export_loading').style.display = 'none';
+                    alert("產生圖片失敗！請檢查是否有圖片檔名輸入錯誤。\n詳細錯誤: " + err);
+                });
+            }, 800); 
+        }
         initAvatarGrid();
         updateAllUI();
     </script>
