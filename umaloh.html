@@ -114,15 +114,6 @@
         /* 圖表外框樣式 */
         .chart-container { background-color: rgba(50, 50, 64, 0.9); padding: 15px; border-radius: 8px; border: 1px solid #555; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         
-        .horse-btn-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; justify-content: center; }
-        .horse-square-btn { width: 105px; height: 145px; background: #323240; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; padding: 10px 4px; transition: 0.2s; color: white; }
-        .horse-square-btn img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; margin-bottom: 8px; }
-        .horse-square-btn span { font-size: 15px; font-weight: bold; text-align: center; word-break: break-all; line-height: 1.2; }
-        .horse-square-btn:hover, .horse-square-btn.active { background: #4CAF50; border-color: #4CAF50; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px; }
-        .stat-box { background: #323240; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 3px solid #E91E63; }
-        .stat-val { font-size: 32px; font-weight: bold; margin: 10px 0; color: #FFD700; }
     </style>
 </head>
 <body>
@@ -226,7 +217,6 @@
             </div>
 
             <div style="display: flex; gap: 15px; margin-top: 30px; flex-wrap: wrap;">
-                <button style="background-color: #2196F3;" onclick="openStatsModal()">馬娘出場率與均分</button>
                 <button style="background-color: #4CAF50;" onclick="openHistoryModal()">歷史戰績明細</button>
                 <button style="background-color: #9C27B0;" onclick="previewLOHSummary()">產生戰績總結圖片</button>
             </div>
@@ -241,22 +231,11 @@
             <div id="avatar_grid" class="avatar-grid"></div>
         </div>
     </div>
-    
-    <div id="stats_modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 900px;">
-            <button class="close-modal" onclick="closeModal('stats_modal')">&times;</button>
-            <h2 style="border:none; margin-top: 0;">馬娘個別出賽數據</h2>
-            <div id="stats_horse_selector" class="horse-btn-grid"></div>
-            <div id="stats_detail_container">
-                <p style="color:#aaa; text-align:center; font-size:16px;">請點選上方馬娘方塊查看戰績</p>
-            </div>
-        </div>
-    </div>
 
     <div id="history_modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 700px;">
             <button class="close-modal" onclick="closeModal('history_modal')">&times;</button>
-            <h2 style="border:none; margin-bottom: 20px; margin-top: 0; color: #E91E63;">歷史戰績明細</h2>
+            <h2 style="border:none; margin-bottom: 20px; margin-top: 0; color: #E91E63;">歷史戰績</h2>
             <div id="history_list_container" style="max-height: 60vh; overflow-y: auto; padding-right: 10px;">
                 </div>
         </div>
@@ -451,7 +430,6 @@
             updateDropdownOptions();
             
             const stage = getStageInfo(records.length + 1);
-            // 移除了可換陣容的提示
             const lockTag = stage.isLocked ? `<span class="lock-status locked">鎖定</span>` : "";
             document.getElementById('stage_display').innerHTML = `${stage.title} ${lockTag}`;
 
@@ -468,7 +446,6 @@
             updateGridTable();
             initOrUpdateChart();
 
-            // 如果歷史紀錄面板開著就重新渲染
             if(document.getElementById('history_modal').style.display === 'flex') {
                 openHistoryModal();
             }
@@ -781,44 +758,6 @@
             html += `</div></div>`;
             summaryContainer.innerHTML = html;
             document.getElementById('summary_preview_modal').style.display = 'flex';
-        }
-
-        // --- 馬娘勝率統計分析 ---
-        function openStatsModal() {
-            document.getElementById('stats_modal').style.display = 'flex';
-            const allNames = Array.from(new Set([...roster.map(h=>h.name), ...records.flatMap(r=>r.lineup.map(l=>l.name))]));
-            
-            document.getElementById('stats_horse_selector').innerHTML = allNames.map(n => {
-                const imgSrc = getHorseImg(n);
-                const imgHTML = `<img src="${imgSrc}" onerror="this.src='img/unknown.jpg'; this.style.backgroundColor='#222'">`;
-                return `<button class="horse-square-btn" id="btn_stat_${n}" onclick="renderStatsDetail('${n}')">
-                            ${imgHTML}
-                            <span>${formatName(n)}</span>
-                        </button>`;
-            }).join('');
-            document.getElementById('stats_detail_container').innerHTML = "<p style='color:#aaa; text-align:center; font-size:16px;'>請點選上方馬娘方塊查看戰績</p>";
-        }
-
-        function renderStatsDetail(name) {
-            document.querySelectorAll('.horse-square-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`btn_stat_${name}`).classList.add('active');
-
-            const container = document.getElementById('stats_detail_container');
-            const playedMatches = records.filter(r => r.lineup.some(l => l.name === name));
-            if (playedMatches.length === 0) { container.innerHTML = "<p style='text-align:center;'>無出賽紀錄。</p>"; return; }
-            const total = playedMatches.length;
-            
-            let totalPoints = 0;
-            playedMatches.forEach(r => {
-                totalPoints += r.score;
-            });
-            let avgScore = (totalPoints / total).toFixed(1);
-
-            let html = `<div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">`;
-            html += `<div class="stat-box"><div>出賽次數 (票數)</div><div class="stat-val">${total} 次</div><div style="font-size:14px; color:#aaa;">總佔比 ${((total/records.length)*100).toFixed(1)}%</div></div>`;
-            html += `<div class="stat-box"><div>出場時平均得分</div><div class="stat-val">${avgScore} 分</div><div style="font-size:14px; color:#aaa;">總貢獻 ${totalPoints} 分</div></div>`;
-            html += `</div>`;
-            container.innerHTML = html;
         }
 
         // --- 總結報表下載按鈕綁定 ---
